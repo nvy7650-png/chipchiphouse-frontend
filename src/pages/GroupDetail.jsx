@@ -270,14 +270,6 @@ export default function GroupDetail() {
             <ArrowLeft className="w-4 h-4" />
             Quay lại
           </button>
-
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 text-white text-sm font-bold hover:bg-sky-600 transition"
-          >
-            <Plus className="w-4 h-4" />
-            Thêm album
-          </button>
         </header>
 
         <div className="p-4 sm:p-6 lg:p-8">
