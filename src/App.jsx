@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminCategories from './pages/AdminCategories';
 import AdminGroups from './pages/AdminGroups';
+import GroupDetail from './pages/GroupDetail';
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/categories" element={<AdminCategories />} />
         <Route path="/admin/groups" element={<AdminGroups />} />
+        <Route path="/admin/groups/:groupId" element={<GroupDetail />} />
 
       </Routes>
     </BrowserRouter>
