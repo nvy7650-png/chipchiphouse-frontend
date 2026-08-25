@@ -31,45 +31,51 @@ export default function LoginPage() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
-  setError('');
-  setLoading(true);
+    try {
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/login`,
+        formData
+      );
 
-  try {
-    const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/login`,
-      formData
-    );
+      console.log('Login response full:', res.data);
 
-    console.log('Login response:', res.data);
+      // Kiểm tra linh hoạt cấu trúc user trả về từ backend
+      const user = res.data.user || res.data.data || res.data;
 
-    const user = res.data.user;
+      if (!user) {
+        throw new Error('Không nhận được thông tin người dùng!');
+      }
 
-    localStorage.setItem(
-      'user',
-      JSON.stringify(user)
-    );
+      // Lưu thông tin người dùng vào LocalStorage
+      localStorage.setItem('user', JSON.stringify(user));
 
-    // PHÂN QUYỀN
-    if (user.role === 'admin') {
-      navigate('/admin');
-    } else {
-      navigate('/');
+      // Ép kiểu chữ thường và cắt khoảng trắng để so sánh chính xác
+      const userRole = user.role ? String(user.role).toLowerCase().trim() : '';
+
+      console.log('User Role nhận được:', userRole);
+
+      // PHÂN QUYỀN
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+
+    } catch (err) {
+      console.error('Lỗi đăng nhập:', err);
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        'Không thể kết nối đến máy chủ!'
+      );
+    } finally {
+      setLoading(false);
     }
-
-  } catch (err) {
-    console.error('Lỗi đăng nhập:', err);
-
-    setError(
-      err.response?.data?.message ||
-      'Không thể kết nối đến máy chủ!'
-    );
-
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-8">
