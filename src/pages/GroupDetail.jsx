@@ -58,10 +58,9 @@ export default function GroupDetail() {
       console.log('Group ID:', groupId);
 
       // Lấy thông tin nhóm
-      const groupRes = await axios.get(
-        `${API_URL}/groups/${groupId}`
-      );
-
+      const res = await axios.get(
+  `${API_URL}/groups/${groupId}/products`
+);
       console.log('Group:', groupRes.data);
 
       setGroup(groupRes.data.group);
