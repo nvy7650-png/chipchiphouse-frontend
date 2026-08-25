@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 
 export default function GroupDetail() {
-
-  const { id } = useParams();
+  const { id, groupId } = useParams();
   const navigate = useNavigate();
+
+  // Hỗ trợ cả /admin/groups/:id và /admin/groups/:groupId
+  const currentGroupId = id || groupId;
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -27,59 +29,97 @@ export default function GroupDetail() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
+  // =====================================================
+  // LẤY CHI TIẾT NHÓM
+  // =====================================================
 
-    if (!id) {
+  useEffect(() => {
+    if (!currentGroupId) {
+      console.error('Không có ID nhóm:', {
+        id,
+        groupId
+      });
+
       setError('Không xác định được nhóm nhạc!');
       setLoading(false);
       return;
     }
 
     const fetchGroupDetail = async () => {
-
       try {
-
         setLoading(true);
         setError('');
 
-        console.log('Group ID:', id);
-
-        const res = await axios.get(
-          `${API_URL}/groups/${id}/products`
+        console.log(
+          'Đang lấy thông tin nhóm:',
+          currentGroupId
         );
 
-        console.log('Group detail:', res.data);
+        const res = await axios.get(
+          `${API_URL}/groups/${currentGroupId}/products`
+        );
 
-        setGroup(res.data.group);
+        console.log(
+          'Chi tiết nhóm:',
+          res.data
+        );
+
+        if (!res.data?.success) {
+          setError(
+            res.data?.message ||
+            'Không thể lấy thông tin nhóm nhạc!'
+          );
+
+          return;
+        }
+
+        setGroup(res.data.group || null);
         setProducts(res.data.products || []);
 
       } catch (err) {
-
         console.error(
           'Lỗi lấy chi tiết nhóm:',
           err
         );
 
+        setGroup(null);
+        setProducts([]);
+
         setError(
           err.response?.data?.message ||
           'Không thể lấy thông tin nhóm nhạc!'
         );
-
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
     fetchGroupDetail();
 
-  }, [id]);
+  }, [currentGroupId, API_URL, id, groupId]);
+
+  // =====================================================
+  // FORMAT GIÁ
+  // =====================================================
 
   const formatPrice = (price) => {
-    return Number(price || 0).toLocaleString('vi-VN') + ' ₫';
+    return (
+      Number(price || 0).toLocaleString('vi-VN') +
+      ' ₫'
+    );
   };
+
+  // =====================================================
+  // QUAY LẠI
+  // =====================================================
+
+  const handleBack = () => {
+    navigate('/admin/groups');
+  };
+
+  // =====================================================
+  // LOADING
+  // =====================================================
 
   if (loading) {
     return (
@@ -94,7 +134,15 @@ export default function GroupDetail() {
 
           <div className="text-center">
 
-            <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto mb-3" />
+            <Loader2
+              className="
+                w-8 h-8
+                text-sky-500
+                animate-spin
+                mx-auto
+                mb-3
+              "
+            />
 
             <p className="text-sm text-slate-500">
               Đang tải thông tin nhóm...
@@ -108,6 +156,10 @@ export default function GroupDetail() {
     );
   }
 
+  // =====================================================
+  // ERROR
+  // =====================================================
+
   if (error) {
     return (
       <div className="min-h-screen bg-slate-100 flex">
@@ -117,21 +169,61 @@ export default function GroupDetail() {
           setIsOpen={setSidebarOpen}
         />
 
-        <main className="flex-1 lg:ml-64 p-6 lg:p-8">
+        <main className="flex-1 lg:ml-64 min-w-0">
 
-          <button
-            onClick={() => navigate('/admin/groups')}
-            className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 mb-6"
+          <header
+            className="
+              h-16
+              bg-white
+              border-b border-slate-200
+              px-4 sm:px-8
+              flex items-center
+            "
           >
-            <ArrowLeft className="w-4 h-4" />
-            Quay lại nhóm nhạc
-          </button>
 
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-center gap-3 text-red-600">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="
+                flex
+                items-center
+                gap-2
+                text-sm
+                font-bold
+                text-slate-600
+                hover:text-sky-600
+                transition
+              "
+            >
+              <ArrowLeft className="w-4 h-4" />
 
-            <AlertCircle className="w-5 h-5" />
+              Quay lại nhóm nhạc
+            </button>
 
-            <span>{error}</span>
+          </header>
+
+          <div className="p-4 sm:p-6 lg:p-8">
+
+            <div
+              className="
+                bg-red-50
+                border border-red-200
+                rounded-2xl
+                p-5
+                flex
+                items-center
+                gap-3
+                text-red-600
+              "
+            >
+
+              <AlertCircle className="w-5 h-5 shrink-0" />
+
+              <span className="font-medium">
+                {error}
+              </span>
+
+            </div>
 
           </div>
 
@@ -141,55 +233,168 @@ export default function GroupDetail() {
     );
   }
 
+  // =====================================================
+  // MAIN
+  // =====================================================
+
   return (
     <div className="min-h-screen bg-slate-100 flex">
+
+      {/* SIDEBAR */}
 
       <AdminSidebar
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
       />
 
+      {/* MAIN */}
+
       <main className="flex-1 lg:ml-64 min-w-0">
 
-        {/* HEADER */}
-        <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center">
+        {/* =================================================
+            HEADER
+        ================================================= */}
+
+        <header
+          className="
+            h-16
+            bg-white
+            border-b border-slate-200
+            px-4 sm:px-8
+            flex
+            items-center
+          "
+        >
 
           <button
-            onClick={() => navigate('/admin/groups')}
-            className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600"
+            type="button"
+            onClick={handleBack}
+            className="
+              flex
+              items-center
+              gap-2
+              text-sm
+              font-bold
+              text-slate-600
+              hover:text-sky-600
+              transition
+            "
           >
+
             <ArrowLeft className="w-4 h-4" />
-            Quay lại
+
+            Quay lại nhóm nhạc
+
           </button>
 
         </header>
 
+        {/* =================================================
+            CONTENT
+        ================================================= */}
+
         <div className="p-4 sm:p-6 lg:p-8">
 
-          {/* GROUP HEADER */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+          {/* =================================================
+              GROUP INFORMATION
+          ================================================= */}
 
-            <p className="text-xs uppercase tracking-wider font-bold text-slate-400">
-              Nhóm nhạc
-            </p>
+          <div
+            className="
+              bg-white
+              rounded-2xl
+              border border-slate-200
+              shadow-sm
+              p-6
+              mb-6
+            "
+          >
 
-            <h1 className="text-3xl font-black text-slate-900 mt-1">
-              {group?.name}
-            </h1>
+            <div className="flex items-center gap-4">
 
-            <p className="text-sm text-slate-500 mt-2">
-              {products.length} album
-            </p>
+              <div
+                className="
+                  w-14
+                  h-14
+                  rounded-2xl
+                  bg-sky-50
+                  flex
+                  items-center
+                  justify-center
+                  shrink-0
+                "
+              >
+
+                <Layers
+                  className="
+                    w-7
+                    h-7
+                    text-sky-500
+                  "
+                />
+
+              </div>
+
+              <div>
+
+                <p
+                  className="
+                    text-xs
+                    uppercase
+                    tracking-wider
+                    font-bold
+                    text-slate-400
+                  "
+                >
+                  Nhóm nhạc
+                </p>
+
+                <h1
+                  className="
+                    text-2xl
+                    sm:text-3xl
+                    font-black
+                    text-slate-900
+                  "
+                >
+                  {group?.name || 'Không có tên'}
+                </h1>
+
+                <p className="text-sm text-slate-500 mt-1">
+                  {products.length} album
+                </p>
+
+              </div>
+
+            </div>
 
           </div>
 
-          {/* ALBUM */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* =================================================
+              ALBUM LIST
+          ================================================= */}
 
-            <div className="p-5 border-b border-slate-100">
+          <div
+            className="
+              bg-white
+              rounded-2xl
+              border border-slate-200
+              shadow-sm
+              overflow-hidden
+            "
+          >
+
+            {/* TITLE */}
+
+            <div
+              className="
+                p-5
+                border-b border-slate-100
+              "
+            >
 
               <h2 className="font-bold text-slate-900">
-                Album
+                Danh sách album
               </h2>
 
               <p className="text-xs text-slate-500 mt-1">
@@ -198,19 +403,55 @@ export default function GroupDetail() {
 
             </div>
 
+            {/* =================================================
+                KHÔNG CÓ ALBUM
+            ================================================= */}
+
             {products.length === 0 ? (
 
-              <div className="py-16 text-center">
+              <div
+                className="
+                  py-16
+                  text-center
+                "
+              >
 
-                <Package className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+                <Package
+                  className="
+                    w-10
+                    h-10
+                    text-slate-300
+                    mx-auto
+                    mb-3
+                  "
+                />
 
-                <p className="font-bold text-slate-500">
-                  Chưa có album
+                <p
+                  className="
+                    font-bold
+                    text-slate-500
+                  "
+                >
+                  Nhóm này chưa có album
+                </p>
+
+                <p
+                  className="
+                    text-xs
+                    text-slate-400
+                    mt-1
+                  "
+                >
+                  Hãy thêm album trong phần quản lý sản phẩm
                 </p>
 
               </div>
 
             ) : (
+
+              /* =================================================
+                 DANH SÁCH ALBUM
+              ================================================= */
 
               <div className="divide-y divide-slate-100">
 
@@ -219,49 +460,136 @@ export default function GroupDetail() {
                   <div
                     key={product.id}
                     onClick={() =>
-                      navigate(`/admin/products/${product.id}`)
+                      navigate(
+                        `/admin/products/${product.id}`
+                      )
                     }
-                    className="p-5 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition"
+                    className="
+                      p-5
+                      flex
+                      items-center
+                      justify-between
+                      gap-4
+                      hover:bg-slate-50
+                      cursor-pointer
+                      transition
+                    "
                   >
 
-                    <div className="flex items-center gap-4">
+                    {/* LEFT */}
 
-                      <div className="w-20 h-20 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center">
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-4
+                        min-w-0
+                      "
+                    >
+
+                      {/* IMAGE */}
+
+                      <div
+                        className="
+                          w-20
+                          h-20
+                          rounded-xl
+                          bg-slate-100
+                          overflow-hidden
+                          flex
+                          items-center
+                          justify-center
+                          shrink-0
+                        "
+                      >
 
                         {product.image_url ? (
 
                           <img
                             src={product.image_url}
                             alt={product.title}
-                            className="w-full h-full object-cover"
+                            className="
+                              w-full
+                              h-full
+                              object-cover
+                            "
                           />
 
                         ) : (
 
-                          <Package className="w-8 h-8 text-slate-300" />
+                          <Package
+                            className="
+                              w-8
+                              h-8
+                              text-slate-300
+                            "
+                          />
 
                         )}
 
                       </div>
 
-                      <div>
+                      {/* INFORMATION */}
 
-                        <h3 className="font-bold text-slate-900">
+                      <div className="min-w-0">
+
+                        <h3
+                          className="
+                            font-bold
+                            text-slate-900
+                            truncate
+                          "
+                        >
                           {product.title}
                         </h3>
 
-                        <div className="flex flex-wrap gap-3 mt-2">
+                        <div
+                          className="
+                            flex
+                            flex-wrap
+                            items-center
+                            gap-3
+                            mt-2
+                          "
+                        >
 
-                          <span className="flex items-center gap-1 text-xs font-semibold text-sky-600">
+                          {/* VERSION COUNT */}
 
-                            <Layers className="w-3.5 h-3.5" />
+                          <span
+                            className="
+                              inline-flex
+                              items-center
+                              gap-1
+                              px-2.5
+                              py-1
+                              rounded-lg
+                              bg-sky-50
+                              text-sky-600
+                              text-xs
+                              font-semibold
+                            "
+                          >
 
-                            {product.version_count || 0} version
+                            <Layers
+                              className="w-3.5 h-3.5"
+                            />
+
+                            {product.version_count || 0}
+                            {' '}
+                            version
 
                           </span>
 
-                          <span className="text-xs text-slate-500">
-                            Tồn kho: {product.total_stock || 0}
+                          {/* STOCK */}
+
+                          <span
+                            className="
+                              text-xs
+                              text-slate-500
+                            "
+                          >
+                            Tồn kho:{' '}
+                            {product.total_stock || 0}
                           </span>
 
                         </div>
@@ -270,21 +598,54 @@ export default function GroupDetail() {
 
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    {/* RIGHT */}
 
-                      <div className="hidden sm:block text-right">
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-4
+                        shrink-0
+                      "
+                    >
 
-                        <p className="text-xs text-slate-400">
-                          Giá
+                      <div
+                        className="
+                          hidden
+                          sm:block
+                          text-right
+                        "
+                      >
+
+                        <p
+                          className="
+                            text-xs
+                            text-slate-400
+                          "
+                        >
+                          Giá từ
                         </p>
 
-                        <p className="font-bold text-slate-800">
-                          {formatPrice(product.min_price)}
+                        <p
+                          className="
+                            font-bold
+                            text-slate-800
+                          "
+                        >
+                          {formatPrice(
+                            product.min_price
+                          )}
                         </p>
 
                       </div>
 
-                      <ChevronRight className="w-5 h-5 text-slate-400" />
+                      <ChevronRight
+                        className="
+                          w-5
+                          h-5
+                          text-slate-400
+                        "
+                      />
 
                     </div>
 
