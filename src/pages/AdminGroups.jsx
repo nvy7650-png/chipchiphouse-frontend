@@ -897,7 +897,6 @@ export default function AdminGroups() {
                 onChange={handleChange}
                 autoFocus
                 disabled={saving}
-                placeholder="VD: RIIZE, BLACKPINK, IVE..."
                 className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400 disabled:opacity-50"
               />
 
