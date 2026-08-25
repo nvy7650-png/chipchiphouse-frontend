@@ -179,11 +179,6 @@ export default function LoginPage() {
               HOUSE
             </span>
           </h2>
-
-          <p className="text-slate-500 text-xs sm:text-sm mt-1 font-medium">
-            Đăng nhập để tiếp tục săn Merch Kpop xịn xò
-          </p>
-
         </div>
 
         {/* ========================================
