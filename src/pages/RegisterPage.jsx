@@ -37,64 +37,68 @@ export default function RegisterPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setError('');
+  setError('');
 
-    // Kiểm tra số điện thoại:
-    // Đúng 10 số và bắt đầu bằng 0
-    const phoneRegex = /^0[0-9]{9}$/;
+  // Kiểm tra số điện thoại
+  const phoneRegex = /^0[0-9]{9}$/;
 
-    if (!phoneRegex.test(formData.phone)) {
-      setError(
-        'Số điện thoại không hợp lệ! Phải gồm đúng 10 chữ số và bắt đầu bằng số 0.'
-      );
-      return;
-    }
+  if (!phoneRegex.test(formData.phone)) {
+    setError(
+      'Số điện thoại không hợp lệ! Phải gồm đúng 10 chữ số và bắt đầu bằng số 0.'
+    );
+    return;
+  }
 
-    // Kiểm tra mật khẩu
-    if (formData.password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự!');
-      return;
-    }
+  // Kiểm tra mật khẩu
+  if (formData.password.length < 6) {
+    setError('Mật khẩu phải có ít nhất 6 ký tự!');
+    return;
+  }
 
-    // Kiểm tra mật khẩu xác nhận
-    if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không trùng khớp!');
-      return;
-    }
+  // Kiểm tra mật khẩu xác nhận
+  if (formData.password !== formData.confirmPassword) {
+    setError('Mật khẩu xác nhận không trùng khớp!');
+    return;
+  }
 
-    setLoading(true);
+  setLoading(true);
 
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/register`,
-        {
-          username: formData.username,
-          email: formData.email,
-          phone: formData.phone,
-          password: formData.password
-        }
-      );
+  try {
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/auth/register`,
+      {
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password
+      }
+    );
 
-      console.log('Register response:', res.data);
+    console.log('Register response:', res.data);
 
-      alert('Đăng ký tài khoản thành công! 🎉');
+    // Lưu thông tin user vừa đăng ký
+    localStorage.setItem(
+      'user',
+      JSON.stringify(res.data.user)
+    );
 
-      navigate('/login');
+    // Đăng ký thành công -> vào thẳng Home
+    navigate('/');
 
-    } catch (err) {
-      console.error('Lỗi đăng ký:', err);
+  } catch (err) {
+    console.error('Lỗi đăng ký:', err);
 
-      setError(
-        err.response?.data?.message ||
-        'Không thể kết nối đến máy chủ!'
-      );
+    setError(
+      err.response?.data?.message ||
+      'Không thể kết nối đến máy chủ!'
+    );
 
-    } finally {
-      setLoading(false);
-    }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-8">
