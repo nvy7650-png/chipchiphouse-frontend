@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Khai báo màu tùy chỉnh cho CHIPCHIP HOUSE */
+@theme {
+  --color-chip-blue: #a4cee4;
+  --color-chip-yellow: #fbfac6;
+}
