@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '../components/AdminSidebar';
+
 import {
   Plus,
   Search,
@@ -9,21 +11,34 @@ import {
   X,
   Loader2,
   Music2,
-  AlertCircle
+  AlertCircle,
+  ChevronRight,
+  ArrowLeft,
+  Package,
+  Layers
 } from 'lucide-react';
 
 export default function AdminGroups() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // ==============================
+  // GROUPS
+  // ==============================
   const [groups, setGroups] = useState([]);
   const [search, setSearch] = useState('');
 
+  // ==============================
+  // PRODUCTS / ALBUMS
+  // ==============================
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [groupProducts, setGroupProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
 
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-
+  // ==============================
+  // MODAL
+  // ==============================
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
 
@@ -31,24 +46,29 @@ export default function AdminGroups() {
     name: ''
   });
 
-  // ==========================================
-  // API URL
-  // ==========================================
+  // ==============================
+  // MESSAGE
+  // ==============================
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [modalError, setModalError] = useState('');
+
+  const [saving, setSaving] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // ==========================================
-  // LẤY DANH SÁCH NHÓM NHẠC
-  // ==========================================
+  const navigate = useNavigate();
+
+  // =====================================================
+  // LẤY DANH SÁCH NHÓM
+  // =====================================================
 
   const fetchGroups = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const res = await axios.get(
-        `${API_URL}/groups`
-      );
+      const res = await axios.get(`${API_URL}/groups`);
 
       setGroups(
         res.data.groups ||
@@ -63,7 +83,6 @@ export default function AdminGroups() {
         err.response?.data?.message ||
         'Không thể lấy danh sách nhóm nhạc!'
       );
-
     } finally {
       setLoading(false);
     }
@@ -73,9 +92,53 @@ export default function AdminGroups() {
     fetchGroups();
   }, []);
 
-  // ==========================================
-  // MỞ MODAL THÊM
-  // ==========================================
+  // =====================================================
+  // CLICK VÀO NHÓM → LẤY ALBUM
+  // =====================================================
+
+  const handleViewGroup = async (group) => {
+    try {
+      setSelectedGroup(group);
+      setLoadingProducts(true);
+      setError('');
+
+      const res = await axios.get(
+        `${API_URL}/groups/${group.id}/products`
+      );
+
+      setGroupProducts(
+        res.data.products ||
+        res.data.data ||
+        []
+      );
+
+    } catch (err) {
+      console.error('Lỗi lấy sản phẩm của nhóm:', err);
+
+      setGroupProducts([]);
+
+      setError(
+        err.response?.data?.message ||
+        'Không thể lấy danh sách album của nhóm!'
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  // =====================================================
+  // QUAY LẠI DANH SÁCH NHÓM
+  // =====================================================
+
+  const handleBackToGroups = () => {
+    setSelectedGroup(null);
+    setGroupProducts([]);
+    setError('');
+  };
+
+  // =====================================================
+  // THÊM NHÓM
+  // =====================================================
 
   const handleAdd = () => {
     setEditingGroup(null);
@@ -84,14 +147,13 @@ export default function AdminGroups() {
       name: ''
     });
 
-    setError('');
-    setSuccess('');
+    setModalError('');
     setShowModal(true);
   };
 
-  // ==========================================
-  // MỞ MODAL SỬA
-  // ==========================================
+  // =====================================================
+  // SỬA NHÓM
+  // =====================================================
 
   const handleEdit = (group) => {
     setEditingGroup(group);
@@ -100,14 +162,13 @@ export default function AdminGroups() {
       name: group.name || ''
     });
 
-    setError('');
-    setSuccess('');
+    setModalError('');
     setShowModal(true);
   };
 
-  // ==========================================
+  // =====================================================
   // ĐÓNG MODAL
-  // ==========================================
+  // =====================================================
 
   const handleCloseModal = () => {
     if (saving) return;
@@ -118,11 +179,13 @@ export default function AdminGroups() {
     setFormData({
       name: ''
     });
+
+    setModalError('');
   };
 
-  // ==========================================
-  // THAY ĐỔI FORM
-  // ==========================================
+  // =====================================================
+  // INPUT
+  // =====================================================
 
   const handleChange = (e) => {
     setFormData({
@@ -131,9 +194,9 @@ export default function AdminGroups() {
     });
   };
 
-  // ==========================================
-  // THÊM / CẬP NHẬT
-  // ==========================================
+  // =====================================================
+  // THÊM / SỬA NHÓM
+  // =====================================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -141,19 +204,15 @@ export default function AdminGroups() {
     const name = formData.name.trim();
 
     if (!name) {
-      setError('Vui lòng nhập tên nhóm nhạc!');
+      setModalError('Vui lòng nhập tên nhóm nhạc!');
       return;
     }
 
     try {
       setSaving(true);
-      setError('');
-      setSuccess('');
+      setModalError('');
 
       if (editingGroup) {
-        // ==============================
-        // CẬP NHẬT
-        // ==============================
 
         await axios.put(
           `${API_URL}/groups/${editingGroup.id}`,
@@ -165,9 +224,6 @@ export default function AdminGroups() {
         setSuccess('Cập nhật nhóm nhạc thành công!');
 
       } else {
-        // ==============================
-        // THÊM MỚI
-        // ==============================
 
         await axios.post(
           `${API_URL}/groups`,
@@ -181,33 +237,32 @@ export default function AdminGroups() {
 
       await fetchGroups();
 
-      setTimeout(() => {
-        setShowModal(false);
-        setEditingGroup(null);
+      setShowModal(false);
+      setEditingGroup(null);
 
-        setFormData({
-          name: ''
-        });
-
-        setSuccess('');
-      }, 500);
+      setFormData({
+        name: ''
+      });
 
     } catch (err) {
-      console.error('Lỗi lưu nhóm nhạc:', err);
+      console.error('Lỗi lưu nhóm:', err);
 
-      setError(
+      setModalError(
         err.response?.data?.message ||
         'Không thể lưu nhóm nhạc!'
       );
-
     } finally {
       setSaving(false);
+
+      setTimeout(() => {
+        setSuccess('');
+      }, 3000);
     }
   };
 
-  // ==========================================
-  // XÓA NHÓM NHẠC
-  // ==========================================
+  // =====================================================
+  // XÓA NHÓM
+  // =====================================================
 
   const handleDelete = async (group) => {
     const confirmed = window.confirm(
@@ -228,8 +283,16 @@ export default function AdminGroups() {
 
       await fetchGroups();
 
+      if (
+        selectedGroup &&
+        selectedGroup.id === group.id
+      ) {
+        setSelectedGroup(null);
+        setGroupProducts([]);
+      }
+
     } catch (err) {
-      console.error('Lỗi xóa nhóm nhạc:', err);
+      console.error('Lỗi xóa nhóm:', err);
 
       setError(
         err.response?.data?.message ||
@@ -238,9 +301,9 @@ export default function AdminGroups() {
     }
   };
 
-  // ==========================================
+  // =====================================================
   // TÌM KIẾM
-  // ==========================================
+  // =====================================================
 
   const filteredGroups = groups.filter((group) =>
     group.name
@@ -248,25 +311,39 @@ export default function AdminGroups() {
       .includes(search.toLowerCase())
   );
 
-  // ==========================================
+  // =====================================================
+  // FORMAT PRICE
+  // =====================================================
+
+  const formatPrice = (price) => {
+    return Number(price || 0).toLocaleString('vi-VN') + ' ₫';
+  };
+
+  // =====================================================
   // RENDER
-  // ==========================================
+  // =====================================================
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
 
-      {/* SIDEBAR */}
+      {/* ==============================
+          SIDEBAR
+      ============================== */}
 
       <AdminSidebar
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
       />
 
-      {/* MAIN */}
+      {/* ==============================
+          MAIN
+      ============================== */}
 
       <div className="flex-1 lg:ml-64 min-w-0">
 
-        {/* HEADER */}
+        {/* ==============================
+            HEADER
+        ============================== */}
 
         <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
 
@@ -274,44 +351,53 @@ export default function AdminGroups() {
 
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-slate-600 text-xl"
+              className="lg:hidden text-slate-600 hover:text-slate-900 text-xl"
             >
               ☰
             </button>
 
             <div>
+
               <h1 className="text-lg sm:text-xl font-bold text-slate-900">
                 Quản lý nhóm nhạc
               </h1>
 
               <p className="hidden sm:block text-xs text-slate-500">
-                Quản lý các nhóm Kpop trong hệ thống
+                Quản lý nhóm Kpop và các album của từng nhóm
               </p>
+
             </div>
 
           </div>
 
-          <button
-            onClick={handleAdd}
-            className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              Thêm nhóm nhạc
-            </span>
-          </button>
+          {!selectedGroup && (
+            <button
+              onClick={handleAdd}
+              className="flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-sm transition"
+            >
+              <Plus className="w-4 h-4" />
+
+              <span className="hidden sm:inline">
+                Thêm nhóm nhạc
+              </span>
+            </button>
+          )}
 
         </header>
 
-        {/* CONTENT */}
+        {/* ==============================
+            CONTENT
+        ============================== */}
 
         <main className="p-4 sm:p-6 lg:p-8">
 
-          {/* THÔNG BÁO LỖI */}
+          {/* ERROR */}
 
-          {error && !showModal && (
+          {error && (
             <div className="mb-5 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 text-sm font-medium">
+
               <AlertCircle className="w-5 h-5 shrink-0" />
+
               <span>{error}</span>
 
               <button
@@ -320,187 +406,432 @@ export default function AdminGroups() {
               >
                 <X className="w-4 h-4" />
               </button>
+
             </div>
           )}
 
           {/* SUCCESS */}
 
-          {success && !showModal && (
+          {success && (
             <div className="mb-5 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm font-medium">
               {success}
             </div>
           )}
 
-          {/* CARD */}
+          {/* ==================================================
+              TRANG CHI TIẾT NHÓM
+          ================================================== */}
 
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+          {selectedGroup ? (
 
-            {/* TOP */}
+            <div>
 
-            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-4 justify-between">
+              {/* BACK */}
 
-              <div>
-                <h2 className="font-bold text-slate-900">
-                  Danh sách nhóm nhạc
-                </h2>
+              <button
+                onClick={handleBackToGroups}
+                className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-sky-600 mb-5 transition"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Quay lại danh sách nhóm
+              </button>
 
-                <p className="text-xs text-slate-500 mt-1">
-                  Tổng cộng {groups.length} nhóm nhạc
-                </p>
+              {/* GROUP HEADER */}
+
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+
+                <div className="flex items-center gap-4">
+
+                  <div className="w-16 h-16 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center">
+
+                    <Music2 className="w-8 h-8" />
+
+                  </div>
+
+                  <div>
+
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                      Nhóm nhạc
+                    </p>
+
+                    <h2 className="text-2xl font-black text-slate-900">
+                      {selectedGroup.name}
+                    </h2>
+
+                    <p className="text-sm text-slate-500 mt-1">
+                      {groupProducts.length} sản phẩm / album
+                    </p>
+
+                  </div>
+
+                </div>
+
               </div>
 
-              {/* SEARCH */}
+              {/* ALBUM LIST */}
 
-              <div className="relative w-full sm:w-72">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <div className="p-5 border-b border-slate-100">
 
-                <input
-                  type="text"
-                  placeholder="Tìm tên nhóm..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
-                />
+                  <h2 className="font-bold text-slate-900">
+                    Album / Sản phẩm
+                  </h2>
 
-              </div>
-
-            </div>
-
-            {/* TABLE */}
-
-            <div className="overflow-x-auto">
-
-              {loading ? (
-
-                <div className="py-16 flex flex-col items-center justify-center text-slate-500">
-
-                  <Loader2 className="w-7 h-7 animate-spin mb-3 text-sky-500" />
-
-                  <p className="text-sm">
-                    Đang tải danh sách nhóm nhạc...
+                  <p className="text-xs text-slate-500 mt-1">
+                    Các sản phẩm thuộc nhóm {selectedGroup.name}
                   </p>
 
                 </div>
 
-              ) : filteredGroups.length === 0 ? (
+                {loadingProducts ? (
 
-                <div className="py-16 flex flex-col items-center justify-center text-slate-400">
+                  <div className="py-16 flex flex-col items-center justify-center text-slate-500">
 
-                  <Music2 className="w-10 h-10 mb-3" />
+                    <Loader2 className="w-7 h-7 animate-spin mb-3 text-sky-500" />
 
-                  <p className="font-semibold">
-                    Không có nhóm nhạc nào
-                  </p>
+                    <p className="text-sm">
+                      Đang tải album...
+                    </p>
 
-                  <p className="text-xs mt-1">
-                    Thử tìm kiếm với từ khóa khác
-                  </p>
+                  </div>
 
-                </div>
+                ) : groupProducts.length === 0 ? (
 
-              ) : (
+                  <div className="py-16 flex flex-col items-center justify-center text-slate-400">
 
-                <table className="w-full text-left">
+                    <Package className="w-10 h-10 mb-3" />
 
-                  <thead>
+                    <p className="font-semibold">
+                      Nhóm này chưa có album
+                    </p>
 
-                    <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <p className="text-xs mt-1">
+                      Hãy thêm sản phẩm cho nhóm này
+                    </p>
 
-                      <th className="px-6 py-4 w-24">
-                        ID
-                      </th>
+                  </div>
 
-                      <th className="px-6 py-4">
-                        Tên nhóm nhạc
-                      </th>
+                ) : (
 
-                      <th className="px-6 py-4 text-right">
-                        Thao tác
-                      </th>
+                  <div className="divide-y divide-slate-100">
 
-                    </tr>
+                    {groupProducts.map((product) => (
 
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-100">
-
-                    {filteredGroups.map((group) => (
-
-                      <tr
-                        key={group.id}
-                        className="hover:bg-slate-50 transition"
+                      <div
+                        key={product.id}
+                        className="p-5 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer"
+                        onClick={() =>
+                          navigate(`/admin/products/${product.id}`)
+                        }
                       >
 
-                        <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
 
-                          <span className="text-sm font-bold text-slate-500">
-                            #{group.id}
-                          </span>
+                          {/* IMAGE */}
 
-                        </td>
+                          <div className="w-16 h-16 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
 
-                        <td className="px-6 py-4">
+                            {product.image_url ? (
 
-                          <div className="flex items-center gap-3">
+                              <img
+                                src={product.image_url}
+                                alt={product.title}
+                                className="w-full h-full object-cover"
+                              />
 
-                            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center">
-                              <Music2 className="w-5 h-5" />
+                            ) : (
+
+                              <Package className="w-7 h-7 text-slate-400" />
+
+                            )}
+
+                          </div>
+
+                          {/* INFO */}
+
+                          <div>
+
+                            <h3 className="font-bold text-slate-900">
+                              {product.title}
+                            </h3>
+
+                            <div className="flex flex-wrap items-center gap-3 mt-1">
+
+                              <span className="text-xs text-slate-500">
+                                {product.category || 'album'}
+                              </span>
+
+                              {product.version_count !== undefined && (
+
+                                <span className="flex items-center gap-1 text-xs font-semibold text-sky-600">
+
+                                  <Layers className="w-3.5 h-3.5" />
+
+                                  {product.version_count} version
+
+                                </span>
+
+                              )}
+
                             </div>
 
-                            <span className="font-bold text-slate-900">
-                              {group.name}
+                          </div>
+
+                        </div>
+
+                        {/* RIGHT */}
+
+                        <div className="flex items-center gap-3">
+
+                          {product.min_price !== undefined && (
+                            <span className="hidden sm:block text-sm font-bold text-slate-700">
+                              {formatPrice(product.min_price)}
                             </span>
+                          )}
 
-                          </div>
+                          <ChevronRight className="w-5 h-5 text-slate-400" />
 
-                        </td>
+                        </div>
 
-                        <td className="px-6 py-4">
-
-                          <div className="flex justify-end gap-2">
-
-                            <button
-                              onClick={() => handleEdit(group)}
-                              className="p-2 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 transition"
-                              title="Chỉnh sửa"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              onClick={() => handleDelete(group)}
-                              className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
-                              title="Xóa"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-
-                          </div>
-
-                        </td>
-
-                      </tr>
+                      </div>
 
                     ))}
 
-                  </tbody>
+                  </div>
 
-                </table>
+                )}
 
-              )}
+              </div>
 
             </div>
 
-          </div>
+          ) : (
+
+            /* ==================================================
+               DANH SÁCH NHÓM
+            ================================================== */
+
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+
+              {/* TOP */}
+
+              <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-4 justify-between">
+
+                <div>
+
+                  <h2 className="font-bold text-slate-900">
+                    Danh sách nhóm nhạc
+                  </h2>
+
+                  <p className="text-xs text-slate-500 mt-1">
+                    Tổng cộng {groups.length} nhóm nhạc
+                  </p>
+
+                </div>
+
+                {/* SEARCH */}
+
+                <div className="relative w-full sm:w-72">
+
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+                  <input
+                    type="text"
+                    placeholder="Tìm tên nhóm..."
+                    value={search}
+                    onChange={(e) =>
+                      setSearch(e.target.value)
+                    }
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
+                  />
+
+                </div>
+
+              </div>
+
+              {/* TABLE */}
+
+              <div className="overflow-x-auto">
+
+                {loading ? (
+
+                  <div className="py-16 flex flex-col items-center justify-center text-slate-500">
+
+                    <Loader2 className="w-7 h-7 animate-spin mb-3 text-sky-500" />
+
+                    <p className="text-sm">
+                      Đang tải danh sách nhóm nhạc...
+                    </p>
+
+                  </div>
+
+                ) : filteredGroups.length === 0 ? (
+
+                  <div className="py-16 flex flex-col items-center justify-center text-slate-400">
+
+                    <Music2 className="w-10 h-10 mb-3" />
+
+                    <p className="font-semibold">
+                      Không có nhóm nhạc nào
+                    </p>
+
+                    <p className="text-xs mt-1">
+                      Thử tìm kiếm với từ khóa khác
+                    </p>
+
+                  </div>
+
+                ) : (
+
+                  <table className="w-full text-left">
+
+                    <thead>
+
+                      <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
+
+                        <th className="px-6 py-4 w-24">
+                          ID
+                        </th>
+
+                        <th className="px-6 py-4">
+                          Tên nhóm nhạc
+                        </th>
+
+                        <th className="px-6 py-4">
+                          Album
+                        </th>
+
+                        <th className="px-6 py-4 text-right">
+                          Thao tác
+                        </th>
+
+                      </tr>
+
+                    </thead>
+
+                    <tbody className="divide-y divide-slate-100">
+
+                      {filteredGroups.map((group) => (
+
+                        <tr
+                          key={group.id}
+                          className="hover:bg-slate-50 transition"
+                        >
+
+                          {/* ID */}
+
+                          <td className="px-6 py-4">
+
+                            <span className="text-sm font-bold text-slate-500">
+                              #{group.id}
+                            </span>
+
+                          </td>
+
+                          {/* GROUP */}
+
+                          <td className="px-6 py-4">
+
+                            <button
+                              onClick={() =>
+                                handleViewGroup(group)
+                              }
+                              className="flex items-center gap-3 text-left"
+                            >
+
+                              <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center">
+
+                                <Music2 className="w-5 h-5" />
+
+                              </div>
+
+                              <span className="font-bold text-slate-900 hover:text-sky-600 transition">
+                                {group.name}
+                              </span>
+
+                            </button>
+
+                          </td>
+
+                          {/* ALBUM */}
+
+                          <td className="px-6 py-4">
+
+                            <button
+                              onClick={() =>
+                                handleViewGroup(group)
+                              }
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-50 text-sky-600 text-xs font-bold hover:bg-sky-100 transition"
+                            >
+
+                              <Package className="w-3.5 h-3.5" />
+
+                              Xem album
+
+                              <ChevronRight className="w-3.5 h-3.5" />
+
+                            </button>
+
+                          </td>
+
+                          {/* ACTION */}
+
+                          <td className="px-6 py-4">
+
+                            <div className="flex justify-end gap-2">
+
+                              <button
+                                onClick={() =>
+                                  handleEdit(group)
+                                }
+                                className="p-2 rounded-lg bg-sky-50 text-sky-600 hover:bg-sky-100 transition"
+                                title="Chỉnh sửa"
+                              >
+
+                                <Pencil className="w-4 h-4" />
+
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleDelete(group)
+                                }
+                                className="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
+                                title="Xóa"
+                              >
+
+                                <Trash2 className="w-4 h-4" />
+
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+
+                      ))}
+
+                    </tbody>
+
+                  </table>
+
+                )}
+
+              </div>
+
+            </div>
+
+          )}
 
         </main>
 
       </div>
 
-      {/* ==========================================
+      {/* ==================================================
           MODAL THÊM / SỬA
-      ========================================== */}
+      ================================================== */}
 
       {showModal && (
 
@@ -508,16 +839,18 @@ export default function AdminGroups() {
 
           <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl">
 
-            {/* MODAL HEADER */}
+            {/* HEADER */}
 
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
 
               <div>
 
                 <h2 className="text-lg font-bold text-slate-900">
+
                   {editingGroup
                     ? 'Chỉnh sửa nhóm nhạc'
                     : 'Thêm nhóm nhạc'}
+
                 </h2>
 
                 <p className="text-xs text-slate-500 mt-1">
@@ -531,7 +864,9 @@ export default function AdminGroups() {
                 disabled={saving}
                 className="p-2 rounded-lg hover:bg-slate-100 text-slate-400"
               >
+
                 <X className="w-5 h-5" />
+
               </button>
 
             </div>
@@ -543,16 +878,12 @@ export default function AdminGroups() {
               className="p-5"
             >
 
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
-                  {error}
-                </div>
-              )}
+              {modalError && (
 
-              {success && (
-                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-600 text-sm">
-                  {success}
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm">
+                  {modalError}
                 </div>
+
               )}
 
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
@@ -564,9 +895,9 @@ export default function AdminGroups() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Ví dụ: BLACKPINK"
                 autoFocus
                 disabled={saving}
+                placeholder="VD: RIIZE, BLACKPINK, IVE..."
                 className="w-full border border-slate-200 bg-slate-50 rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400 disabled:opacity-50"
               />
 
@@ -596,6 +927,7 @@ export default function AdminGroups() {
                   {editingGroup
                     ? 'Cập nhật'
                     : 'Thêm nhóm'}
+
                 </button>
 
               </div>
