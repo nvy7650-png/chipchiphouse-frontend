@@ -1,168 +1,154 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+import {
+  BarChart3,
+  ShoppingBag,
+  Users,
+  Package,
+  TrendingUp,
+  Clock,
+  Menu
+} from 'lucide-react';
+
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from 'recharts';
+
 import AdminSidebar from '../components/AdminSidebar';
 
 export default function AdminDashboard() {
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    totalOrders: 0,
-    totalProducts: 0,
-    totalUsers: 0
-  });
-
-  const [recentOrders, setRecentOrders] = useState([]);
+  const [period, setPeriod] = useState('month');
 
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+
+  const [dashboard, setDashboard] = useState({
+    stats: {
+      totalRevenue: 0,
+      totalOrders: 0,
+      totalProducts: 0,
+      totalUsers: 0,
+      currentMonth: {
+        revenue: 0,
+        orders: 0
+      },
+      today: {
+        revenue: 0,
+        orders: 0
+      }
+    },
+
+    recentOrders: [],
+
+    charts: {
+      daily: [],
+      monthly: []
+    }
+  });
 
   const navigate = useNavigate();
 
-  // =====================================================
-  // LẤY USER HIỆN TẠI
-  // =====================================================
-  const getCurrentUser = () => {
-    try {
-      const storedUser = localStorage.getItem('user');
+  // ==========================================
+  // FORMAT TIỀN
+  // ==========================================
+  const formatMoney = (value) => {
+    return Number(value || 0).toLocaleString('vi-VN') + ' ₫';
+  };
 
-      if (!storedUser) {
-        return null;
+  // ==========================================
+  // FORMAT NGÀY
+  // ==========================================
+  const formatDate = (date) => {
+    if (!date) return '';
+
+    return new Date(date).toLocaleDateString('vi-VN');
+  };
+
+  // ==========================================
+  // LẤY DATA BACKEND
+  // ==========================================
+  const fetchDashboard = async () => {
+
+    try {
+
+      setLoading(true);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/admin/stats`,
+        {
+          params: {
+            period
+          }
+        }
+      );
+
+      if (res.data?.success) {
+        setDashboard(res.data);
       }
 
-      return JSON.parse(storedUser);
     } catch (error) {
-      console.error('Lỗi đọc user:', error);
 
-      localStorage.removeItem('user');
-      return null;
+      console.error(
+        'Lỗi lấy dashboard:',
+        error
+      );
+
+    } finally {
+
+      setLoading(false);
+
     }
   };
 
-  const user = getCurrentUser();
+  useEffect(() => {
+    fetchDashboard();
+  }, [period]);
 
-  // =====================================================
-  // KIỂM TRA QUYỀN ADMIN
-  // =====================================================
-  const isAdmin =
-    user &&
-    String(user.role || '')
-      .trim()
-      .toLowerCase() === 'admin';
+  // ==========================================
+  // DATA CHART
+  // ==========================================
+  const chartData =
+    period === 'day'
+      ? dashboard.charts.daily
+      : dashboard.charts.monthly;
 
-  // =====================================================
-  // FORMAT TIỀN
-  // =====================================================
-  const formatCurrency = (value) => {
-    const number = Number(value || 0);
+  // ==========================================
+  // ĐỔI FORMAT CHART
+  // ==========================================
+  const formattedChartData = chartData.map(item => ({
+    ...item,
 
-    return (
-      number.toLocaleString('vi-VN') + ' ₫'
-    );
-  };
+    label:
+      period === 'day'
+        ? formatDate(item.date)
+        : item.month
+  }));
 
-  // =====================================================
-  // FORMAT SỐ
-  // =====================================================
-  const formatNumber = (value) => {
-    return Number(value || 0).toLocaleString('vi-VN');
-  };
-
-  // =====================================================
-  // FORMAT NGÀY
-  // =====================================================
-  const formatDate = (date) => {
-    if (!date) {
-      return '—';
-    }
-
-    const parsedDate = new Date(date);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      return '—';
-    }
-
-    return parsedDate.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
-
-  // =====================================================
-  // FORMAT GIỜ
-  // =====================================================
-  const formatDateTime = (date) => {
-    if (!date) {
-      return '—';
-    }
-
-    const parsedDate = new Date(date);
-
-    if (Number.isNaN(parsedDate.getTime())) {
-      return '—';
-    }
-
-    return parsedDate.toLocaleString('vi-VN');
-  };
-
-  // =====================================================
-  // TEXT TRẠNG THÁI ĐƠN HÀNG
-  //
-  // Theo DB:
-  // pending
-  // paid
-  // shipping
-  // completed
-  // cancelled
-  // =====================================================
-  const getStatusText = (status) => {
-    const normalizedStatus = String(status || '')
-      .trim()
-      .toLowerCase();
-
-    switch (normalizedStatus) {
-      case 'pending':
-        return 'Chờ thanh toán';
-
-      case 'paid':
-        return 'Đã thanh toán';
-
-      case 'shipping':
-        return 'Đang giao';
-
-      case 'completed':
-        return 'Hoàn thành';
-
-      case 'cancelled':
-        return 'Đã hủy';
-
-      default:
-        return 'Không xác định';
-    }
-  };
-
-  // =====================================================
-  // MÀU TRẠNG THÁI
-  // =====================================================
+  // ==========================================
+  // TRẠNG THÁI ĐƠN
+  // ==========================================
   const getStatusClass = (status) => {
-    const normalizedStatus = String(status || '')
-      .trim()
-      .toLowerCase();
 
-    switch (normalizedStatus) {
-      case 'pending':
-        return 'bg-amber-100 text-amber-700';
-
-      case 'paid':
-        return 'bg-sky-100 text-sky-700';
-
-      case 'shipping':
-        return 'bg-blue-100 text-blue-700';
+    switch (status) {
 
       case 'completed':
         return 'bg-emerald-100 text-emerald-700';
+
+      case 'paid':
+        return 'bg-blue-100 text-blue-700';
+
+      case 'shipping':
+        return 'bg-amber-100 text-amber-700';
 
       case 'cancelled':
         return 'bg-red-100 text-red-700';
@@ -172,563 +158,385 @@ export default function AdminDashboard() {
     }
   };
 
-  // =====================================================
-  // LOAD DASHBOARD
-  // =====================================================
-  const fetchDashboard = async () => {
-    try {
-      setLoading(true);
-      setError('');
+  const getStatusText = (status) => {
 
-      const apiUrl = import.meta.env.VITE_API_URL;
+    switch (status) {
 
-      if (!apiUrl) {
-        throw new Error(
-          'Chưa cấu hình VITE_API_URL'
-        );
-      }
+      case 'completed':
+        return 'Hoàn thành';
 
-      const response = await axios.get(
-        `${apiUrl}/admin/stats`
-      );
+      case 'paid':
+        return 'Đã thanh toán';
 
-      console.log(
-        'Admin dashboard response:',
-        response.data
-      );
+      case 'shipping':
+        return 'Đang giao';
 
-      const data = response.data;
+      case 'cancelled':
+        return 'Đã hủy';
 
-      // =================================================
-      // KIỂM TRA RESPONSE
-      // =================================================
-      if (!data || data.success === false) {
-        throw new Error(
-          data?.message ||
-          'Không thể lấy dữ liệu dashboard'
-        );
-      }
+      case 'pending':
+        return 'Chờ xử lý';
 
-      // =================================================
-      // STATS
-      // =================================================
-      const receivedStats = data.stats || {};
-
-      setStats({
-        totalRevenue:
-          Number(receivedStats.totalRevenue || 0),
-
-        totalOrders:
-          Number(receivedStats.totalOrders || 0),
-
-        totalProducts:
-          Number(receivedStats.totalProducts || 0),
-
-        totalUsers:
-          Number(receivedStats.totalUsers || 0)
-      });
-
-      // =================================================
-      // RECENT ORDERS
-      // =================================================
-      const orders = Array.isArray(
-        data.recentOrders
-      )
-        ? data.recentOrders
-        : [];
-
-      setRecentOrders(orders);
-
-    } catch (err) {
-      console.error(
-        'Lỗi lấy dashboard admin:',
-        err
-      );
-
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        'Không thể tải dữ liệu dashboard'
-      );
-
-      setStats({
-        totalRevenue: 0,
-        totalOrders: 0,
-        totalProducts: 0,
-        totalUsers: 0
-      });
-
-      setRecentOrders([]);
-
-    } finally {
-      setLoading(false);
+      default:
+        return status;
     }
   };
 
-  // =====================================================
-  // KIỂM TRA ADMIN + LOAD DATA
-  // =====================================================
-  useEffect(() => {
-    if (!isAdmin) {
-      return;
-    }
-
-    fetchDashboard();
-  }, [isAdmin]);
-
-  // =====================================================
-  // KHÔNG PHẢI ADMIN
-  // =====================================================
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
-
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center">
-
-          <div className="w-16 h-16 mx-auto rounded-full bg-red-100 text-red-500 flex items-center justify-center text-2xl font-black">
-            !
-          </div>
-
-          <h2 className="text-xl font-black text-slate-800 mt-5">
-            Không có quyền truy cập
-          </h2>
-
-          <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-            Chỉ tài khoản quản trị viên mới có thể
-            truy cập trang quản trị.
-          </p>
-
-          <button
-            onClick={() => navigate('/login')}
-            className="mt-6 bg-sky-500 hover:bg-sky-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition"
-          >
-            Đăng nhập
-          </button>
-
-        </div>
-
-      </div>
-    );
-  }
-
-  // =====================================================
-  // DASHBOARD
-  // =====================================================
   return (
     <div className="min-h-screen bg-slate-100 flex">
 
-      {/* =================================================
-          SIDEBAR
-      ================================================= */}
+      {/* SIDEBAR */}
       <AdminSidebar
         isOpen={sidebarOpen}
         setIsOpen={setSidebarOpen}
       />
 
-      {/* =================================================
-          MAIN
-      ================================================= */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0">
+      {/* MAIN */}
+      <div className="flex-1 lg:ml-64 min-w-0">
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+        {/* HEADER */}
         <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
 
           <div className="flex items-center gap-4">
 
-            {/* Mobile menu */}
             <button
-              onClick={() =>
-                setSidebarOpen(true)
-              }
-              className="lg:hidden text-slate-600 hover:text-slate-900 font-bold text-xl"
-              aria-label="Mở menu"
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden"
             >
-              ☰
+              <Menu className="w-6 h-6" />
             </button>
 
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-800">
+
+              <h1 className="text-lg sm:text-xl font-black text-slate-900">
                 Tổng quan hệ thống
               </h1>
 
-              <p className="hidden sm:block text-xs text-slate-500 mt-0.5">
-                Quản lý và theo dõi hoạt động cửa hàng
-              </p>
-            </div>
-
-          </div>
-
-          {/* Admin info */}
-          <div className="flex items-center gap-3">
-
-            <div className="text-right hidden sm:block">
-
-              <p className="text-sm font-bold text-slate-800">
-                {user?.name || 'Admin'}
-              </p>
-
               <p className="text-xs text-slate-500">
-                Quản trị viên
+                Theo dõi hoạt động CHIPCHIP HOUSE
               </p>
 
-            </div>
-
-            <div className="w-9 h-9 bg-sky-500 text-white rounded-full flex items-center justify-center font-bold text-sm uppercase">
-              {(
-                user?.name ||
-                user?.username ||
-                'AD'
-              )
-                .substring(0, 2)
-                .toUpperCase()}
             </div>
 
           </div>
 
         </header>
 
-        {/* =================================================
-            MAIN BODY
-        ================================================= */}
         <main className="p-4 sm:p-6 lg:p-8 space-y-6">
 
-          {/* =================================================
-              PAGE HEADER
-          ================================================= */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* ========================================
+              ĐƠN HÀNG MỚI NHẤT
+          ======================================== */}
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
-            <div>
-              <h2 className="text-xl font-black text-slate-900">
-                Dashboard
-              </h2>
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
 
-              <p className="text-sm text-slate-500 mt-1">
-                Tổng quan tình hình hoạt động của cửa hàng
-              </p>
-            </div>
+              <div className="flex items-center gap-2">
 
-            <button
-              onClick={fetchDashboard}
-              disabled={loading}
-              className="self-start sm:self-auto px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition disabled:opacity-50"
-            >
-              {loading
-                ? 'Đang tải...'
-                : '↻ Làm mới'}
-            </button>
+                <Clock className="w-5 h-5 text-sky-500" />
 
-          </div>
-
-          {/* =================================================
-              ERROR
-          ================================================= */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm flex items-start gap-3">
-
-              <span className="font-black">
-                !
-              </span>
-
-              <div>
-                <p className="font-bold">
-                  Không thể tải dữ liệu
-                </p>
-
-                <p className="mt-0.5">
-                  {error}
-                </p>
-              </div>
-
-            </div>
-          )}
-
-          {/* =================================================
-              STATISTICS
-          ================================================= */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-
-            {/* Revenue */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Tổng doanh thu
-              </p>
-
-              <p className="text-xl sm:text-2xl font-black text-slate-900 mt-2 break-words">
-                {loading
-                  ? 'Đang tải...'
-                  : formatCurrency(
-                      stats.totalRevenue
-                    )}
-              </p>
-
-              <p className="text-xs text-slate-400 mt-2">
-                Doanh thu từ đơn hàng
-              </p>
-
-            </div>
-
-            {/* Orders */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Tổng đơn hàng
-              </p>
-
-              <p className="text-xl sm:text-2xl font-black text-slate-900 mt-2">
-                {loading
-                  ? 'Đang tải...'
-                  : formatNumber(
-                      stats.totalOrders
-                    )}
-              </p>
-
-              <p className="text-xs text-slate-400 mt-2">
-                Tổng số đơn trong hệ thống
-              </p>
-
-            </div>
-
-            {/* Products */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Sản phẩm
-              </p>
-
-              <p className="text-xl sm:text-2xl font-black text-slate-900 mt-2">
-                {loading
-                  ? 'Đang tải...'
-                  : formatNumber(
-                      stats.totalProducts
-                    )}
-              </p>
-
-              <p className="text-xs text-slate-400 mt-2">
-                Tổng sản phẩm trong kho
-              </p>
-
-            </div>
-
-            {/* Users */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Khách hàng
-              </p>
-
-              <p className="text-xl sm:text-2xl font-black text-slate-900 mt-2">
-                {loading
-                  ? 'Đang tải...'
-                  : formatNumber(
-                      stats.totalUsers
-                    )}
-              </p>
-
-              <p className="text-xs text-slate-400 mt-2">
-                Tổng tài khoản khách hàng
-              </p>
-
-            </div>
-
-          </div>
-
-          {/* =================================================
-              RECENT ORDERS
-          ================================================= */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-
-            {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-
-              <div>
-
-                <h2 className="text-base font-bold text-slate-900">
+                <h2 className="font-black text-slate-900">
                   Đơn hàng mới nhất
                 </h2>
-
-                <p className="text-xs text-slate-500 mt-1">
-                  Các đơn hàng gần đây trong hệ thống
-                </p>
 
               </div>
 
               <button
-                onClick={() =>
-                  navigate('/admin/orders')
-                }
-                className="self-start sm:self-auto text-xs font-bold text-sky-600 hover:text-sky-700 hover:underline"
+                onClick={() => navigate('/admin/orders')}
+                className="text-sm font-bold text-sky-600 hover:underline"
               >
-                Xem tất cả →
+                Xem tất cả
               </button>
 
             </div>
 
-            {/* Loading */}
-            {loading && (
-              <div className="p-10 text-center">
+            <div className="overflow-x-auto">
 
-                <div className="inline-flex items-center gap-2 text-sm text-slate-500">
+              <table className="w-full">
 
-                  <div className="w-4 h-4 border-2 border-slate-300 border-t-sky-500 rounded-full animate-spin" />
+                <thead className="bg-slate-50">
 
-                  Đang tải dữ liệu...
+                  <tr className="text-xs uppercase text-slate-500">
 
-                </div>
+                    <th className="text-left px-6 py-3">
+                      Mã đơn
+                    </th>
 
-              </div>
-            )}
+                    <th className="text-left px-6 py-3">
+                      Khách hàng
+                    </th>
 
-            {/* Empty */}
-            {!loading &&
-              !error &&
-              recentOrders.length === 0 && (
-                <div className="p-10 text-center">
+                    <th className="text-left px-6 py-3">
+                      Tổng tiền
+                    </th>
 
-                  <div className="text-3xl mb-3">
-                    📦
-                  </div>
+                    <th className="text-left px-6 py-3">
+                      Trạng thái
+                    </th>
 
-                  <p className="text-sm font-semibold text-slate-600">
-                    Chưa có đơn hàng nào
-                  </p>
+                    <th className="text-left px-6 py-3">
+                      Ngày đặt
+                    </th>
 
-                  <p className="text-xs text-slate-400 mt-1">
-                    Các đơn hàng mới sẽ xuất hiện ở đây.
-                  </p>
+                  </tr>
 
-                </div>
-              )}
+                </thead>
 
-            {/* Orders table */}
-            {!loading &&
-              recentOrders.length > 0 && (
-                <div className="overflow-x-auto">
+                <tbody className="divide-y divide-slate-100">
 
-                  <table className="w-full text-left border-collapse">
+                  {dashboard.recentOrders.map(order => (
 
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <tr
+                      key={order.id}
+                      className="hover:bg-slate-50"
+                    >
 
-                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">
-                          Mã đơn
-                        </th>
+                      <td className="px-6 py-4 font-bold text-sky-600">
+                        #{order.id}
+                      </td>
 
-                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">
-                          Khách hàng
-                        </th>
+                      <td className="px-6 py-4 font-semibold">
+                        {order.customer || 'Khách hàng'}
+                      </td>
 
-                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">
-                          Tổng tiền
-                        </th>
+                      <td className="px-6 py-4 font-bold">
+                        {formatMoney(order.total_amount)}
+                      </td>
 
-                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">
-                          Trạng thái
-                        </th>
+                      <td className="px-6 py-4">
 
-                        <th className="py-3.5 px-4 sm:px-6 whitespace-nowrap">
-                          Ngày đặt
-                        </th>
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusClass(order.status)}`}
+                        >
+                          {getStatusText(order.status)}
+                        </span>
+
+                      </td>
+
+                      <td className="px-6 py-4 text-slate-500 text-sm">
+                        {formatDate(order.created_at)}
+                      </td>
+
+                    </tr>
+
+                  ))}
+
+                  {!loading &&
+                    dashboard.recentOrders.length === 0 && (
+
+                      <tr>
+
+                        <td
+                          colSpan="5"
+                          className="text-center py-10 text-slate-400"
+                        >
+                          Chưa có đơn hàng
+                        </td>
 
                       </tr>
-                    </thead>
 
-                    <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                    )}
 
-                      {recentOrders.map((order) => (
+                </tbody>
 
-                        <tr
-                          key={order.id}
-                          className="hover:bg-slate-50 transition"
-                        >
+              </table>
 
-                          {/* ID */}
-                          <td className="py-4 px-4 sm:px-6 font-bold text-sky-600 whitespace-nowrap">
-                            #{order.id}
-                          </td>
+            </div>
 
-                          {/* Customer */}
-                          <td className="py-4 px-4 sm:px-6">
+          </section>
 
-                            <div className="min-w-[140px]">
+          {/* ========================================
+              FILTER
+          ======================================== */}
+          <div className="flex items-center justify-between">
 
-                              <p className="text-slate-900 font-semibold">
-                                {order.customer ||
-                                  order.customer_name ||
-                                  order.name ||
-                                  'Khách hàng'}
-                              </p>
+            <h2 className="text-lg font-black text-slate-900">
+              Thống kê
+            </h2>
 
-                              {order.email && (
-                                <p className="text-xs text-slate-400 mt-0.5">
-                                  {order.email}
-                                </p>
-                              )}
+            <div className="flex bg-white border border-slate-200 rounded-xl p-1">
 
-                            </div>
+              <button
+                onClick={() => setPeriod('day')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold ${
+                  period === 'day'
+                    ? 'bg-sky-500 text-white'
+                    : 'text-slate-500'
+                }`}
+              >
+                Theo ngày
+              </button>
 
-                          </td>
+              <button
+                onClick={() => setPeriod('month')}
+                className={`px-4 py-2 rounded-lg text-sm font-bold ${
+                  period === 'month'
+                    ? 'bg-sky-500 text-white'
+                    : 'text-slate-500'
+                }`}
+              >
+                Theo tháng
+              </button>
 
-                          {/* Amount */}
-                          <td className="py-4 px-4 sm:px-6 font-bold whitespace-nowrap">
-                            {formatCurrency(
-                              order.total_amount
-                            )}
-                          </td>
-
-                          {/* Status */}
-                          <td className="py-4 px-4 sm:px-6">
-
-                            <span
-                              className={`
-                                inline-block
-                                px-2.5
-                                py-1
-                                rounded-full
-                                text-xs
-                                font-bold
-                                whitespace-nowrap
-                                ${getStatusClass(
-                                  order.status
-                                )}
-                              `}
-                            >
-                              {getStatusText(
-                                order.status
-                              )}
-                            </span>
-
-                          </td>
-
-                          {/* Date */}
-                          <td className="py-4 px-4 sm:px-6 text-slate-500 whitespace-nowrap">
-                            <div>
-                              {formatDate(
-                                order.created_at
-                              )}
-                            </div>
-
-                            <div className="text-xs text-slate-400 mt-0.5">
-                              {formatDateTime(
-                                order.created_at
-                              ).split(' ')[1] || ''}
-                            </div>
-                          </td>
-
-                        </tr>
-
-                      ))}
-
-                    </tbody>
-
-                  </table>
-
-                </div>
-              )}
+            </div>
 
           </div>
+
+          {/* ========================================
+              STAT CARDS
+          ======================================== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+            <div className="bg-white p-5 rounded-2xl border shadow-sm">
+
+              <div className="flex justify-between">
+
+                <div>
+
+                  <p className="text-xs font-bold text-slate-500 uppercase">
+                    Doanh thu
+                  </p>
+
+                  <p className="text-xl font-black mt-2">
+                    {formatMoney(
+                      period === 'day'
+                        ? dashboard.stats.today.revenue
+                        : dashboard.stats.currentMonth.revenue
+                    )}
+                  </p>
+
+                </div>
+
+                <TrendingUp className="text-emerald-500" />
+
+              </div>
+
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border shadow-sm">
+
+              <div className="flex justify-between">
+
+                <div>
+
+                  <p className="text-xs font-bold text-slate-500 uppercase">
+                    Đơn hàng
+                  </p>
+
+                  <p className="text-xl font-black mt-2">
+
+                    {period === 'day'
+                      ? dashboard.stats.today.orders
+                      : dashboard.stats.currentMonth.orders}
+
+                  </p>
+
+                </div>
+
+                <ShoppingBag className="text-sky-500" />
+
+              </div>
+
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border shadow-sm">
+
+              <p className="text-xs font-bold text-slate-500 uppercase">
+                Tổng sản phẩm
+              </p>
+
+              <p className="text-2xl font-black mt-2">
+                {dashboard.stats.totalProducts}
+              </p>
+
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl border shadow-sm">
+
+              <p className="text-xs font-bold text-slate-500 uppercase">
+                Khách hàng
+              </p>
+
+              <p className="text-2xl font-black mt-2">
+                {dashboard.stats.totalUsers}
+              </p>
+
+            </div>
+
+          </div>
+
+          {/* ========================================
+              BIỂU ĐỒ
+          ======================================== */}
+          <section className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+
+            <div className="flex items-center justify-between mb-5">
+
+              <div>
+
+                <h2 className="font-black text-slate-900">
+                  Doanh thu
+                </h2>
+
+                <p className="text-xs text-slate-500 mt-1">
+
+                  {period === 'day'
+                    ? '30 ngày gần nhất'
+                    : '12 tháng gần nhất'}
+
+                </p>
+
+              </div>
+
+              <BarChart3 className="text-sky-500" />
+
+            </div>
+
+            <div className="h-[320px]">
+
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+              >
+
+                <LineChart
+                  data={formattedChartData}
+                  margin={{
+                    top: 10,
+                    right: 20,
+                    left: 20,
+                    bottom: 10
+                  }}
+                >
+
+                  <CartesianGrid strokeDasharray="3 3" />
+
+                  <XAxis
+                    dataKey="label"
+                  />
+
+                  <YAxis />
+
+                  <Tooltip
+                    formatter={(value) =>
+                      formatMoney(value)
+                    }
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+
+                </LineChart>
+
+              </ResponsiveContainer>
+
+            </div>
+
+          </section>
 
         </main>
 
