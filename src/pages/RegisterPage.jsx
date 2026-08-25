@@ -36,59 +36,43 @@ export default function RegisterPage() {
     });
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
 
   setError('');
-
-  // Kiểm tra số điện thoại
-  const phoneRegex = /^0[0-9]{9}$/;
-
-  if (!phoneRegex.test(formData.phone)) {
-    setError(
-      'Số điện thoại không hợp lệ! Phải gồm đúng 10 chữ số và bắt đầu bằng số 0.'
-    );
-    return;
-  }
-
-  // Kiểm tra mật khẩu
-  if (formData.password.length < 6) {
-    setError('Mật khẩu phải có ít nhất 6 ký tự!');
-    return;
-  }
-
-  // Kiểm tra mật khẩu xác nhận
-  if (formData.password !== formData.confirmPassword) {
-    setError('Mật khẩu xác nhận không trùng khớp!');
-    return;
-  }
-
   setLoading(true);
 
   try {
     const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/register`,
+      `${import.meta.env.VITE_API_URL}/auth/login`,
       {
-        username: formData.username,
-        email: formData.email,
-        phone: formData.phone,
+        account: formData.account,
         password: formData.password
       }
     );
 
-    console.log('Register response:', res.data);
+    console.log('Login response:', res.data);
 
-    // Lưu thông tin user vừa đăng ký
+    const user = res.data.user;
+
+    // Lưu thông tin người dùng
     localStorage.setItem(
       'user',
-      JSON.stringify(res.data.user)
+      JSON.stringify(user)
     );
 
-    // Đăng ký thành công -> vào thẳng Home
-    navigate('/');
+    // ==============================
+    // PHÂN QUYỀN
+    // ==============================
+
+    if (user.role === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/');
+    }
 
   } catch (err) {
-    console.error('Lỗi đăng ký:', err);
+    console.error('Lỗi đăng nhập:', err);
 
     setError(
       err.response?.data?.message ||
