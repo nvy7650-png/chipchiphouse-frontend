@@ -442,12 +442,6 @@ export default function AdminGroups() {
 
                 <div className="flex items-center gap-4">
 
-                  <div className="w-16 h-16 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center">
-
-                    <Music2 className="w-8 h-8" />
-
-                  </div>
-
                   <div>
 
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -739,12 +733,6 @@ export default function AdminGroups() {
                               }
                               className="flex items-center gap-3 text-left"
                             >
-
-                              <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-500 flex items-center justify-center">
-
-                                <Music2 className="w-5 h-5" />
-
-                              </div>
 
                               <span className="font-bold text-slate-900 hover:text-sky-600 transition">
                                 {group.name}
