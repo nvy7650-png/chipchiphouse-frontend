@@ -8,7 +8,7 @@ import {
   FileCheck,
   Tag,
   Users,
-  Settings,
+  Music2,
   LogOut,
   X
 } from 'lucide-react';
@@ -21,47 +21,47 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
   // MENU ADMIN ĐẦY ĐỦ CÁC MỤC
   // ==========================================
   const menuItems = [
-    {
-      name: 'Tổng quan',
-      path: '/admin',
-      icon: LayoutDashboard,
-    },
-    {
-      name: 'Quản lý Danh mục',
-      path: '/admin/categories',
-      icon: FolderTree,
-    },
-    {
-      name: 'Quản lý Sản phẩm',
-      path: '/admin/products',
-      icon: Package,
-    },
-    {
-      name: 'Quản lý Đơn hàng',
-      path: '/admin/orders',
-      icon: ShoppingBag,
-    },
-    {
-      name: 'Quản lý Phiếu nhập',
-      path: '/admin/import-notes',
-      icon: FileCheck,
-    },
-    {
-      name: 'Quản lý Khuyến mãi',
-      path: '/admin/promotions',
-      icon: Tag,
-    },
-    {
-      name: 'Quản lý Khách hàng',
-      path: '/admin/users',
-      icon: Users,
-    },
-    {
-      name: 'Cài đặt Hệ thống',
-      path: '/admin/settings',
-      icon: Settings,
-    },
-  ];
+  {
+    name: 'Tổng quan',
+    path: '/admin',
+    icon: LayoutDashboard,
+  },
+  {
+    name: 'Quản lý Danh mục',
+    path: '/admin/categories',
+    icon: FolderTree,
+  },
+  {
+    name: 'Quản lý Nhóm nhạc',
+    path: '/admin/groups',
+    icon: Music2,
+  },
+  {
+    name: 'Quản lý Sản phẩm',
+    path: '/admin/products',
+    icon: Package,
+  },
+  {
+    name: 'Quản lý Đơn hàng',
+    path: '/admin/orders',
+    icon: ShoppingBag,
+  },
+  {
+    name: 'Quản lý Phiếu nhập',
+    path: '/admin/import-notes',
+    icon: FileCheck,
+  },
+  {
+    name: 'Quản lý Khuyến mãi',
+    path: '/admin/promotions',
+    icon: Tag,
+  },
+  {
+    name: 'Quản lý Khách hàng',
+    path: '/admin/users',
+    icon: Users,
+  },
+];
 
   // ==========================================
   // ĐĂNG XUẤT
