@@ -15,7 +15,7 @@ import { CgSpinner } from 'react-icons/cg';
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     phone: '',
     password: '',
@@ -24,66 +24,180 @@ export default function RegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // ==========================================
+  // HANDLE INPUT
+  // ==========================================
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+
+    // Khi người dùng nhập lại thì xóa lỗi
+    if (error) {
+      setError('');
+    }
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  // ==========================================
+  // REGISTER
+  // ==========================================
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  setError('');
-  setLoading(true);
+    setError('');
 
-  try {
-    const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/register`,
-      {
-        username: formData.username,
-        email: formData.email,
-        phone: formData.phone,
-        password: formData.password
+    // ========================================
+    // VALIDATE NAME
+    // ========================================
+    if (!formData.name.trim()) {
+      setError('Vui lòng nhập họ và tên!');
+      return;
+    }
+
+    // ========================================
+    // VALIDATE EMAIL
+    // ========================================
+    if (!formData.email.trim()) {
+      setError('Vui lòng nhập email!');
+      return;
+    }
+
+    // ========================================
+    // VALIDATE PHONE
+    // ========================================
+    const phone = formData.phone.trim();
+
+    if (!phone) {
+      setError('Vui lòng nhập số điện thoại!');
+      return;
+    }
+
+    if (!/^0\d{9}$/.test(phone)) {
+      setError('Số điện thoại phải gồm 10 số và bắt đầu bằng 0!');
+      return;
+    }
+
+    // ========================================
+    // VALIDATE PASSWORD
+    // ========================================
+    if (formData.password.length < 6) {
+      setError('Mật khẩu phải có ít nhất 6 ký tự!');
+      return;
+    }
+
+    // ========================================
+    // CONFIRM PASSWORD
+    // ========================================
+    if (formData.password !== formData.confirmPassword) {
+      setError('Mật khẩu xác nhận không khớp!');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // ========================================
+      // GỌI API REGISTER
+      // ========================================
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/register`,
+        {
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          phone: phone,
+          password: formData.password
+        }
+      );
+
+      console.log('Register response:', res.data);
+
+      // ========================================
+      // XÓA LOGIN CŨ NẾU CÓ
+      // ========================================
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+
+      // ========================================
+      // NẾU BACKEND TRẢ USER
+      // THÌ CÓ THỂ LƯU
+      // ========================================
+      const user =
+        res.data?.user ||
+        res.data?.data?.user;
+
+      if (user) {
+        localStorage.setItem(
+          'user',
+          JSON.stringify(user)
+        );
       }
-    );
 
-    console.log('Register response:', res.data);
+      // ========================================
+      // NẾU BACKEND TRẢ TOKEN
+      // ========================================
+      const token =
+        res.data?.token ||
+        res.data?.accessToken ||
+        res.data?.data?.token ||
+        res.data?.data?.accessToken;
 
-    // Lưu user vừa đăng ký
-    localStorage.setItem(
-      'user',
-      JSON.stringify(res.data.user)
-    );
+      if (token) {
+        localStorage.setItem('token', token);
+      }
 
-    // Đăng ký thành công → vào thẳng Home
-    navigate('/');
+      // ========================================
+      // ĐĂNG KÝ THÀNH CÔNG
+      // CHUYỂN SANG LOGIN
+      // ========================================
+      navigate('/login', {
+        replace: true,
+        state: {
+          message: 'Đăng ký thành công! Vui lòng đăng nhập.'
+        }
+      });
 
-  } catch (err) {
-    console.error('Lỗi đăng ký:', err);
+    } catch (err) {
+      console.error('Lỗi đăng ký:', err);
 
-    setError(
-      err.response?.data?.message ||
-      'Không thể kết nối đến máy chủ!'
-    );
+      if (err.response) {
+        setError(
+          err.response.data?.message ||
+          'Đăng ký thất bại!'
+        );
+      } else if (err.request) {
+        setError(
+          'Không thể kết nối đến máy chủ!'
+        );
+      } else {
+        setError(
+          err.message ||
+          'Đã xảy ra lỗi khi đăng ký!'
+        );
+      }
 
-  } finally {
-    setLoading(false);
-  }
-};
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-8">
 
-      {/* Container */}
+      {/* ==========================================
+          CARD
+      ========================================== */}
       <div className="w-full max-w-sm sm:max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 p-6 sm:p-8">
 
-        {/* Header */}
+        {/* ========================================
+            HEADER
+        ======================================== */}
         <div className="text-center mb-6 sm:mb-8">
 
           <Link
@@ -103,7 +217,9 @@ const handleSubmit = async (e) => {
 
         </div>
 
-        {/* Thông báo lỗi */}
+        {/* ========================================
+            ERROR
+        ======================================== */}
         {error && (
           <div className="mb-5 p-3.5 bg-red-50 border-l-4 border-red-500 text-red-700 text-xs sm:text-sm font-medium rounded-r-xl flex items-center gap-2.5">
 
@@ -114,14 +230,21 @@ const handleSubmit = async (e) => {
           </div>
         )}
 
-        {/* Form đăng ký */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* ========================================
+            FORM
+        ======================================== */}
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4"
+        >
 
-          {/* Username */}
+          {/* ======================================
+              NAME
+          ====================================== */}
           <div>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Tên tài khoản
+              Họ và tên
             </label>
 
             <div className="relative">
@@ -132,10 +255,11 @@ const handleSubmit = async (e) => {
 
               <input
                 type="text"
-                name="username"
+                name="name"
                 required
-                placeholder="Nhập tên tài khoản"
-                value={formData.username}
+                autoComplete="name"
+                placeholder="Nhập họ và tên"
+                value={formData.name}
                 onChange={handleChange}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 sm:py-3 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition"
               />
@@ -144,7 +268,9 @@ const handleSubmit = async (e) => {
 
           </div>
 
-          {/* Email */}
+          {/* ======================================
+              EMAIL
+          ====================================== */}
           <div>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -161,6 +287,7 @@ const handleSubmit = async (e) => {
                 type="email"
                 name="email"
                 required
+                autoComplete="email"
                 placeholder="Nhập email của bạn"
                 value={formData.email}
                 onChange={handleChange}
@@ -171,7 +298,9 @@ const handleSubmit = async (e) => {
 
           </div>
 
-          {/* Phone */}
+          {/* ======================================
+              PHONE
+          ====================================== */}
           <div>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -189,9 +318,24 @@ const handleSubmit = async (e) => {
                 name="phone"
                 required
                 maxLength={10}
-                placeholder="Nhập số điện thoại của bạn"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="Nhập số điện thoại"
                 value={formData.phone}
-                onChange={handleChange}
+                onChange={(e) => {
+                  const value = e.target.value
+                    .replace(/\D/g, '')
+                    .slice(0, 10);
+
+                  setFormData({
+                    ...formData,
+                    phone: value
+                  });
+
+                  if (error) {
+                    setError('');
+                  }
+                }}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 sm:py-3 text-slate-800 text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent transition"
               />
 
@@ -199,7 +343,9 @@ const handleSubmit = async (e) => {
 
           </div>
 
-          {/* Password */}
+          {/* ======================================
+              PASSWORD
+          ====================================== */}
           <div>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -213,10 +359,15 @@ const handleSubmit = async (e) => {
               </div>
 
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={
+                  showPassword
+                    ? 'text'
+                    : 'password'
+                }
                 name="password"
                 required
                 minLength={6}
+                autoComplete="new-password"
                 placeholder="Ít nhất 6 ký tự"
                 value={formData.password}
                 onChange={handleChange}
@@ -225,7 +376,9 @@ const handleSubmit = async (e) => {
 
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() =>
+                  setShowPassword(!showPassword)
+                }
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
                 {showPassword ? (
@@ -239,7 +392,9 @@ const handleSubmit = async (e) => {
 
           </div>
 
-          {/* Confirm Password */}
+          {/* ======================================
+              CONFIRM PASSWORD
+          ====================================== */}
           <div>
 
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
@@ -253,9 +408,14 @@ const handleSubmit = async (e) => {
               </div>
 
               <input
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={
+                  showConfirmPassword
+                    ? 'text'
+                    : 'password'
+                }
                 name="confirmPassword"
                 required
+                autoComplete="new-password"
                 placeholder="Nhập lại mật khẩu"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -265,7 +425,9 @@ const handleSubmit = async (e) => {
               <button
                 type="button"
                 onClick={() =>
-                  setShowConfirmPassword(!showConfirmPassword)
+                  setShowConfirmPassword(
+                    !showConfirmPassword
+                  )
                 }
                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
@@ -280,17 +442,19 @@ const handleSubmit = async (e) => {
 
           </div>
 
-          {/* Submit */}
+          {/* ======================================
+              SUBMIT
+          ====================================== */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-chip-yellow hover:bg-yellow-300 text-slate-900 font-bold py-3 sm:py-3.5 rounded-xl text-sm shadow-md hover:shadow-lg transition transform active:scale-98 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-chip-yellow hover:bg-yellow-300 text-slate-900 font-bold py-3 sm:py-3.5 rounded-xl text-sm shadow-md hover:shadow-lg transition active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
           >
 
             {loading ? (
               <>
                 <CgSpinner className="w-5 h-5 animate-spin" />
-                <span>Đang khởi tạo...</span>
+                <span>Đang đăng ký...</span>
               </>
             ) : (
               <span>Đăng Ký</span>
@@ -300,7 +464,9 @@ const handleSubmit = async (e) => {
 
         </form>
 
-        {/* Footer */}
+        {/* ========================================
+            FOOTER
+        ======================================== */}
         <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-slate-100 text-center text-xs sm:text-sm font-medium text-slate-600">
 
           Đã có tài khoản?{' '}
