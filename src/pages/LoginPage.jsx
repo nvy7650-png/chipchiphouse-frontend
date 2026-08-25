@@ -31,40 +31,45 @@ export default function LoginPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    setError('');
-    setLoading(true);
+  setError('');
+  setLoading(true);
 
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/login`,
-        formData
-      );
+  try {
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/auth/login`,
+      formData
+    );
 
-      console.log('Login response:', res.data);
+    console.log('Login response:', res.data);
 
-      // Lưu thông tin user
-      localStorage.setItem(
-        'user',
-        JSON.stringify(res.data.user)
-      );
+    const user = res.data.user;
 
-      // Đăng nhập thành công
+    localStorage.setItem(
+      'user',
+      JSON.stringify(user)
+    );
+
+    // PHÂN QUYỀN
+    if (user.role === 'admin') {
+      navigate('/admin');
+    } else {
       navigate('/');
-
-    } catch (err) {
-      console.error('Lỗi đăng nhập:', err);
-
-      setError(
-        err.response?.data?.message ||
-        'Không thể kết nối đến máy chủ!'
-      );
-
-    } finally {
-      setLoading(false);
     }
-  };
+
+  } catch (err) {
+    console.error('Lỗi đăng nhập:', err);
+
+    setError(
+      err.response?.data?.message ||
+      'Không thể kết nối đến máy chủ!'
+    );
+
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center px-4 py-8 sm:px-6 lg:px-8">

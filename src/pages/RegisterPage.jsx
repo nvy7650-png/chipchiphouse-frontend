@@ -44,35 +44,28 @@ const handleSubmit = async (e) => {
 
   try {
     const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/auth/login`,
+      `${import.meta.env.VITE_API_URL}/auth/register`,
       {
-        account: formData.account,
+        username: formData.username,
+        email: formData.email,
+        phone: formData.phone,
         password: formData.password
       }
     );
 
-    console.log('Login response:', res.data);
+    console.log('Register response:', res.data);
 
-    const user = res.data.user;
-
-    // Lưu thông tin người dùng
+    // Lưu user vừa đăng ký
     localStorage.setItem(
       'user',
-      JSON.stringify(user)
+      JSON.stringify(res.data.user)
     );
 
-    // ==============================
-    // PHÂN QUYỀN
-    // ==============================
-
-    if (user.role === 'admin') {
-      navigate('/admin');
-    } else {
-      navigate('/');
-    }
+    // Đăng ký thành công → vào thẳng Home
+    navigate('/');
 
   } catch (err) {
-    console.error('Lỗi đăng nhập:', err);
+    console.error('Lỗi đăng ký:', err);
 
     setError(
       err.response?.data?.message ||
