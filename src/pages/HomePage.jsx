@@ -12,15 +12,15 @@ export default function HomePage() {
         <section className="bg-gradient-to-r from-chip-blue via-sky-100 to-chip-yellow py-12 px-4 text-center border-b-4 border-white shadow-inner">
           <div className="max-w-3xl mx-auto">
             <span className="bg-white text-slate-800 text-xs font-black uppercase px-3 py-1 rounded-full shadow-sm tracking-wider">
-              ✨ Official Store ✨
+              Official Store
             </span>
 
             <h2 className="text-4xl md:text-5xl font-black text-slate-900 mt-4 mb-3 drop-shadow-sm">
-              Kpop Album & Unofficial Merch
+              Kpop Album & official Merch
             </h2>
 
             <p className="text-base md:text-lg text-slate-700 font-medium max-w-xl mx-auto">
-              Săn Photocard hiếm, Order Album chốt SOTY và Lightstick chính hãng
+              Order Album và Lightstick chính hãng
               giá tốt nhất tại CHIPCHIP HOUSE!
             </p>
           </div>
