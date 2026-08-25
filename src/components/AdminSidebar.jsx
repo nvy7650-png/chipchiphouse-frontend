@@ -46,7 +46,7 @@ export default function AdminSidebar({ isOpen, setIsOpen }) {
     }
 
     // Về trang đăng nhập
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
   };
 
   // ==========================================
