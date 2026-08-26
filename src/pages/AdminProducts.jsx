@@ -1,11 +1,5 @@
-import React, {
-  useEffect,
-  useRef,
-  useState
-} from 'react';
-
+import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
-
 import AdminSidebar from '../components/AdminSidebar';
 
 import {
@@ -17,550 +11,502 @@ import {
   X,
   Loader2,
   ImagePlus,
+  ChevronLeft,
+  ChevronRight,
   AlertCircle,
   RefreshCw
 } from 'lucide-react';
 
-
-export default function AdminProducts() {
-
-  const API_URL =
-    import.meta.env.VITE_API_URL;
+export default function AdminProduct() {
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const fileInputRef = useRef(null);
 
-
-  // =====================================================
+  // =========================================================
   // STATE
-  // =====================================================
+  // =========================================================
 
-  const [sidebarOpen, setSidebarOpen] =
-    useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const [products, setProducts] =
-    useState([]);
+  const [products, setProducts] = useState([]);
 
-  const [albums, setAlbums] =
-    useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const [loading, setLoading] =
-    useState(true);
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
 
-  const [error, setError] =
-    useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  const [search, setSearch] =
-    useState('');
+  const [imagePreview, setImagePreview] = useState('');
 
-  const [categoryFilter, setCategoryFilter] =
-    useState('all');
+  // Album search
+  const [albumSearch, setAlbumSearch] = useState('');
+  const [albums, setAlbums] = useState([]);
+  const [loadingAlbums, setLoadingAlbums] = useState(false);
+  const [showAlbumList, setShowAlbumList] = useState(false);
 
-
-  // MODAL
-
-  const [showModal, setShowModal] =
-    useState(false);
-
-  const [editingId, setEditingId] =
-    useState(null);
-
-  const [saving, setSaving] =
-    useState(false);
-
-
-  // IMAGE
-
-  const [imagePreview, setImagePreview] =
-    useState('');
-
-
+  // =========================================================
   // FORM
+  // =========================================================
 
-  const [form, setForm] = useState({
-
-    album_id: '',
-
-    title: '',
-
-    version_name: '',
-
-    price: '',
-
+  const emptyForm = {
     category: 'album',
-
+    album_id: '',
+    album_name: '',
+    title: '',
+    version_name: '',
+    price: '',
     is_preorder: false,
-
     release_date: '',
-
     description: '',
-
     image: null
+  };
 
-  });
+  const [form, setForm] = useState(emptyForm);
 
+  // =========================================================
+  // CATEGORY
+  // =========================================================
 
-  // =====================================================
-  // FETCH PRODUCTS
-  // =====================================================
+  const categories = [
+    {
+      value: 'album',
+      label: 'Album'
+    },
+    {
+      value: 'photocard',
+      label: 'Photocard'
+    },
+    {
+      value: 'md_event',
+      label: 'MD / Event'
+    },
+    {
+      value: 'lightstick',
+      label: 'Lightstick'
+    }
+  ];
+
+  // =========================================================
+  // LẤY SẢN PHẨM
+  // =========================================================
 
   const fetchProducts = async () => {
-
     try {
-
       setLoading(true);
       setError('');
 
+      const params = {};
+
+      if (search.trim()) {
+        params.search = search.trim();
+      }
+
+      if (categoryFilter) {
+        params.category = categoryFilter;
+      }
+
       const res = await axios.get(
-        `${API_URL}/products`
+        `${API_URL}/products`,
+        { params }
       );
 
-      setProducts(
-        res.data.products || []
-      );
+      setProducts(res.data.products || []);
 
     } catch (err) {
-
-      console.error(
-        'Lỗi lấy sản phẩm:',
-        err
-      );
+      console.error('Lỗi lấy sản phẩm:', err);
 
       setError(
         err.response?.data?.message ||
         'Không thể lấy danh sách sản phẩm!'
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
-
-  // =====================================================
-  // FETCH ALBUMS
-  // =====================================================
-
-  const fetchAlbums = async () => {
-
-    try {
-
-      const res = await axios.get(
-        `${API_URL}/products/albums`
-      );
-
-      setAlbums(
-        res.data.albums || []
-      );
-
-    } catch (err) {
-
-      console.error(
-        'Lỗi lấy album:',
-        err
-      );
-
-    }
-
-  };
-
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProducts();
+    }, 300);
 
-    fetchProducts();
-    fetchAlbums();
+    return () => clearTimeout(timer);
+  }, [search, categoryFilter]);
 
-  }, []);
+  // =========================================================
+  // LẤY ALBUM
+  // =========================================================
 
+  const fetchAlbums = async (keyword = '') => {
+    try {
+      setLoadingAlbums(true);
 
-  // =====================================================
+      const res = await axios.get(
+        `${API_URL}/products/albums`,
+        {
+          params: {
+            search: keyword
+          }
+        }
+      );
+
+      setAlbums(res.data.albums || []);
+
+    } catch (err) {
+      console.error('Lỗi lấy album:', err);
+    } finally {
+      setLoadingAlbums(false);
+    }
+  };
+
+  // =========================================================
+  // SEARCH ALBUM
+  // =========================================================
+
+  useEffect(() => {
+    if (!showModal || form.category !== 'album') {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchAlbums(albumSearch);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    albumSearch,
+    showModal,
+    form.category
+  ]);
+
+  // =========================================================
   // RESET FORM
-  // =====================================================
+  // =========================================================
 
   const resetForm = () => {
+    setForm(emptyForm);
 
-    setForm({
-
-      album_id: '',
-
-      title: '',
-
-      version_name: '',
-
-      price: '',
-
-      category: 'album',
-
-      is_preorder: false,
-
-      release_date: '',
-
-      description: '',
-
-      image: null
-
-    });
+    setEditingId(null);
 
     setImagePreview('');
 
-    setEditingId(null);
+    setAlbumSearch('');
+
+    setAlbums([]);
+
+    setShowAlbumList(false);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-
   };
 
-
-  // =====================================================
+  // =========================================================
   // OPEN ADD
-  // =====================================================
+  // =========================================================
 
   const openAddModal = () => {
-
     resetForm();
-
     setShowModal(true);
-
   };
 
-
-  // =====================================================
-  // OPEN EDIT
-  // =====================================================
-
-  const openEditModal = (product) => {
-
-    setEditingId(product.id);
-
-    setForm({
-
-      album_id:
-        product.album_id || '',
-
-      title:
-        product.title || '',
-
-      version_name:
-        product.version_name || '',
-
-      price:
-        product.price || '',
-
-      category:
-        product.category || 'album',
-
-      is_preorder:
-        Boolean(product.is_preorder),
-
-      release_date:
-        product.release_date
-          ? String(
-              product.release_date
-            ).slice(0, 10)
-          : '',
-
-      description:
-        product.description || '',
-
-      image: null
-
-    });
-
-    setImagePreview(
-      product.image_url || ''
-    );
-
-    setShowModal(true);
-
-  };
-
-
-  // =====================================================
-  // CLOSE
-  // =====================================================
+  // =========================================================
+  // CLOSE MODAL
+  // =========================================================
 
   const closeModal = () => {
-
     if (saving) return;
 
     setShowModal(false);
-
     resetForm();
-
   };
 
-
-  // =====================================================
-  // FORM CHANGE
-  // =====================================================
+  // =========================================================
+  // CHANGE FORM
+  // =========================================================
 
   const handleChange = (e) => {
-
-    const {
-      name,
-      value,
-      type,
-      checked
-    } = e.target;
+    const { name, value, type, checked } = e.target;
 
     setForm(prev => ({
-
       ...prev,
-
       [name]:
         type === 'checkbox'
           ? checked
           : value
-
     }));
-
   };
 
+  // =========================================================
+  // CHANGE CATEGORY
+  // =========================================================
 
-  // =====================================================
+  const handleCategoryChange = (e) => {
+    const category = e.target.value;
+
+    setForm(prev => ({
+      ...prev,
+      category,
+
+      // Nếu không phải album
+      // thì bỏ album + version
+      ...(category !== 'album'
+        ? {
+            album_id: '',
+            album_name: '',
+            version_name: ''
+          }
+        : {})
+    }));
+
+    setAlbumSearch('');
+    setShowAlbumList(false);
+  };
+
+  // =========================================================
+  // SELECT ALBUM
+  // =========================================================
+
+  const selectAlbum = (album) => {
+    setForm(prev => ({
+      ...prev,
+      album_id: album.id,
+      album_name: album.name
+    }));
+
+    setAlbumSearch(
+      `${album.name}${album.group_name
+        ? ` - ${album.group_name}`
+        : ''}`
+    );
+
+    setShowAlbumList(false);
+  };
+
+  // =========================================================
   // IMAGE
-  // =====================================================
+  // =========================================================
 
   const handleImageChange = (e) => {
-
-    const file =
-      e.target.files?.[0];
+    const file = e.target.files?.[0];
 
     if (!file) return;
 
-
     const allowedTypes = [
-
       'image/jpeg',
       'image/jpg',
       'image/png',
       'image/webp'
-
     ];
 
-
-    if (
-      !allowedTypes.includes(
-        file.type
-      )
-    ) {
-
+    if (!allowedTypes.includes(file.type)) {
       alert(
-        'Chỉ được chọn JPG, PNG hoặc WEBP!'
+        'Chỉ được chọn JPG, JPEG, PNG hoặc WEBP!'
       );
 
       e.target.value = '';
-
       return;
-
     }
 
-
-    if (
-      file.size >
-      5 * 1024 * 1024
-    ) {
-
-      alert(
-        'Ảnh không được vượt quá 5MB!'
-      );
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ảnh không được vượt quá 5MB!');
 
       e.target.value = '';
-
       return;
-
     }
-
 
     setForm(prev => ({
-
       ...prev,
-
       image: file
-
     }));
 
-
-    const url =
-      URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
 
     setImagePreview(url);
-
   };
 
+  // =========================================================
+  // FORMAT MONEY
+  // =========================================================
 
-  // =====================================================
-  // SUBMIT
-  // =====================================================
+  const formatMoney = (value) => {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ''
+    ) {
+      return '0 ₫';
+    }
+
+    return Number(value).toLocaleString('vi-VN') + ' ₫';
+  };
+
+  // =========================================================
+  // FORMAT CATEGORY
+  // =========================================================
+
+  const getCategoryLabel = (category) => {
+    const item = categories.find(
+      x => x.value === category
+    );
+
+    return item?.label || category;
+  };
+
+  // =========================================================
+  // ADD / UPDATE
+  // =========================================================
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
-
-    if (!form.album_id) {
-
-      alert(
-        'Vui lòng chọn album!'
-      );
-
-      return;
-
-    }
-
+    // -----------------------------------------------
+    // VALIDATE TITLE
+    // -----------------------------------------------
 
     if (!form.title.trim()) {
-
-      alert(
-        'Vui lòng nhập tên sản phẩm!'
-      );
-
+      alert('Vui lòng nhập tên sản phẩm!');
       return;
-
     }
 
-
-    if (!form.version_name.trim()) {
-
-      alert(
-        'Vui lòng nhập tên version!'
-      );
-
-      return;
-
-    }
-
+    // -----------------------------------------------
+    // VALIDATE PRICE
+    // -----------------------------------------------
 
     if (
       form.price === '' ||
+      isNaN(Number(form.price)) ||
       Number(form.price) < 0
     ) {
-
-      alert(
-        'Vui lòng nhập giá bán hợp lệ!'
-      );
-
+      alert('Giá bán không hợp lệ!');
       return;
-
     }
 
+    // -----------------------------------------------
+    // ALBUM
+    // -----------------------------------------------
+
+    if (form.category === 'album') {
+
+      if (!form.album_id) {
+        alert('Vui lòng chọn album!');
+        return;
+      }
+
+      if (!form.version_name.trim()) {
+        alert(
+          'Sản phẩm album phải có tên version!'
+        );
+        return;
+      }
+    }
 
     try {
-
       setSaving(true);
 
+      const formData = new FormData();
 
-      const data =
-        new FormData();
-
-
-      data.append(
-        'album_id',
-        form.album_id
-      );
-
-      data.append(
-        'title',
-        form.title.trim()
-      );
-
-      data.append(
-        'version_name',
-        form.version_name.trim()
-      );
-
-      data.append(
-        'price',
-        form.price
-      );
-
-      data.append(
+      formData.append(
         'category',
         form.category
       );
 
-      data.append(
-        'is_preorder',
-        form.is_preorder
-          ? '1'
-          : '0'
+      formData.append(
+        'title',
+        form.title.trim()
       );
 
+      formData.append(
+        'price',
+        Number(form.price)
+      );
+
+      formData.append(
+        'is_preorder',
+        form.is_preorder ? '1' : '0'
+      );
 
       if (form.release_date) {
-
-        data.append(
+        formData.append(
           'release_date',
           form.release_date
         );
-
       }
 
-
-      if (
-        form.description.trim()
-      ) {
-
-        data.append(
+      if (form.description.trim()) {
+        formData.append(
           'description',
           form.description.trim()
         );
-
       }
 
+      // ---------------------------------------------
+      // ALBUM
+      // ---------------------------------------------
+
+      if (form.category === 'album') {
+        formData.append(
+          'album_id',
+          form.album_id
+        );
+
+        formData.append(
+          'version_name',
+          form.version_name.trim()
+        );
+      }
+
+      // ---------------------------------------------
+      // IMAGE
+      // ---------------------------------------------
 
       if (form.image) {
-
-        data.append(
+        formData.append(
           'image',
           form.image
         );
-
       }
-
 
       let res;
 
-
       if (editingId) {
 
-        res =
-          await axios.put(
-            `${API_URL}/products/${editingId}`,
-            data,
-            {
-              headers: {
-                'Content-Type':
-                  'multipart/form-data'
-              }
+        res = await axios.put(
+          `${API_URL}/products/${editingId}`,
+          formData,
+          {
+            headers: {
+              'Content-Type':
+                'multipart/form-data'
             }
-          );
+          }
+        );
 
       } else {
 
-        res =
-          await axios.post(
-            `${API_URL}/products`,
-            data,
-            {
-              headers: {
-                'Content-Type':
-                  'multipart/form-data'
-              }
+        res = await axios.post(
+          `${API_URL}/products`,
+          formData,
+          {
+            headers: {
+              'Content-Type':
+                'multipart/form-data'
             }
-          );
-
+          }
+        );
       }
-
 
       alert(
         res.data.message ||
-        'Thành công!'
+        (
+          editingId
+            ? 'Cập nhật thành công!'
+            : 'Thêm sản phẩm thành công!'
+        )
       );
-
 
       closeModal();
 
@@ -579,44 +525,122 @@ export default function AdminProducts() {
       );
 
     } finally {
-
       setSaving(false);
-
     }
-
   };
 
+  // =========================================================
+  // EDIT
+  // =========================================================
 
-  // =====================================================
+  const handleEdit = async (productId) => {
+    try {
+      setSaving(true);
+
+      const res = await axios.get(
+        `${API_URL}/products/${productId}`
+      );
+
+      const product =
+        res.data.product;
+
+      setEditingId(product.id);
+
+      setForm({
+        category:
+          product.category || 'album',
+
+        album_id:
+          product.album_id || '',
+
+        album_name:
+          product.album_name || '',
+
+        title:
+          product.title || '',
+
+        version_name:
+          product.version_name || '',
+
+        price:
+          product.price ?? '',
+
+        is_preorder:
+          Boolean(product.is_preorder),
+
+        release_date:
+          product.release_date
+            ? String(product.release_date).slice(0, 10)
+            : '',
+
+        description:
+          product.description || '',
+
+        image: null
+      });
+
+      if (product.image_url) {
+        setImagePreview(
+          product.image_url
+        );
+      } else {
+        setImagePreview('');
+      }
+
+      setAlbumSearch(
+        product.album_name
+          ? `${product.album_name}${
+              product.group_name
+                ? ` - ${product.group_name}`
+                : ''
+            }`
+          : ''
+      );
+
+      setShowModal(true);
+
+    } catch (err) {
+
+      console.error(
+        'Lỗi lấy sản phẩm:',
+        err
+      );
+
+      alert(
+        err.response?.data?.message ||
+        'Không thể lấy thông tin sản phẩm!'
+      );
+
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // =========================================================
   // DELETE
-  // =====================================================
+  // =========================================================
 
   const handleDelete = async (
-    product
+    productId,
+    productTitle
   ) => {
 
     const confirmed =
       window.confirm(
-
-        `Bạn có chắc muốn xóa sản phẩm "${product.title} - ${product.version_name}" không?`
-
+        `Bạn có chắc muốn xóa sản phẩm "${productTitle}" không?`
       );
 
-
     if (!confirmed) return;
-
 
     try {
 
       await axios.delete(
-        `${API_URL}/products/${product.id}`
+        `${API_URL}/products/${productId}`
       );
-
 
       alert(
         'Xóa sản phẩm thành công!'
       );
-
 
       await fetchProducts();
 
@@ -631,79 +655,15 @@ export default function AdminProducts() {
         err.response?.data?.message ||
         'Không thể xóa sản phẩm!'
       );
-
     }
-
   };
 
-
-  // =====================================================
-  // FORMAT MONEY
-  // =====================================================
-
-  const formatMoney = (value) => {
-
-    return Number(value || 0)
-      .toLocaleString('vi-VN') + 'đ';
-
-  };
-
-
-  // =====================================================
-  // FILTER
-  // =====================================================
-
-  const filteredProducts =
-    products.filter(product => {
-
-      const keyword =
-        search
-          .trim()
-          .toLowerCase();
-
-
-      const matchSearch =
-        !keyword ||
-
-        product.title
-          ?.toLowerCase()
-          .includes(keyword) ||
-
-        product.version_name
-          ?.toLowerCase()
-          .includes(keyword) ||
-
-        product.album_name
-          ?.toLowerCase()
-          .includes(keyword) ||
-
-        product.group_name
-          ?.toLowerCase()
-          .includes(keyword);
-
-
-      const matchCategory =
-        categoryFilter === 'all' ||
-        product.category ===
-          categoryFilter;
-
-
-      return (
-        matchSearch &&
-        matchCategory
-      );
-
-    });
-
-
-  // =====================================================
+  // =========================================================
   // LOADING
-  // =====================================================
+  // =========================================================
 
   if (loading) {
-
     return (
-
       <div className="min-h-screen bg-slate-100 flex">
 
         <AdminSidebar
@@ -726,18 +686,14 @@ export default function AdminProducts() {
         </main>
 
       </div>
-
     );
-
   }
 
-
-  // =====================================================
+  // =========================================================
   // MAIN
-  // =====================================================
+  // =========================================================
 
   return (
-
     <div className="min-h-screen bg-slate-100 flex">
 
       <AdminSidebar
@@ -745,11 +701,11 @@ export default function AdminProducts() {
         setIsOpen={setSidebarOpen}
       />
 
-
       <main className="flex-1 lg:ml-64 min-w-0">
 
-
-        {/* HEADER */}
+        {/* =================================================
+            HEADER
+        ================================================= */}
 
         <header className="h-16 bg-white border-b border-slate-200 px-4 sm:px-8 flex items-center justify-between">
 
@@ -759,12 +715,11 @@ export default function AdminProducts() {
               Quản lý sản phẩm
             </h1>
 
-            <p className="text-xs text-slate-500">
-              Quản lý album, version và giá bán
+            <p className="text-xs text-slate-400">
+              Quản lý album, photocard và merchandise
             </p>
 
           </div>
-
 
           <button
             onClick={openAddModal}
@@ -782,114 +737,128 @@ export default function AdminProducts() {
 
         <div className="p-4 sm:p-6 lg:p-8">
 
+          {/* =================================================
+              ERROR
+          ================================================= */}
 
-          {/* TOP CARD */}
+          {error && (
+
+            <div className="mb-5 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3 text-red-600">
+
+              <AlertCircle className="w-5 h-5" />
+
+              <span className="text-sm">
+                {error}
+              </span>
+
+              <button
+                onClick={fetchProducts}
+                className="ml-auto text-xs font-bold underline"
+              >
+                Thử lại
+              </button>
+
+            </div>
+
+          )}
+
+
+          {/* =================================================
+              FILTER
+          ================================================= */}
+
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 mb-6">
+
+            <div className="flex flex-col lg:flex-row gap-3">
+
+              {/* SEARCH */}
+
+              <div className="relative flex-1">
+
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+
+                <input
+                  type="text"
+                  value={search}
+                  onChange={e =>
+                    setSearch(e.target.value)
+                  }
+                  placeholder="Tìm sản phẩm, version, album, nhóm..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                />
+
+              </div>
+
+
+              {/* CATEGORY */}
+
+              <select
+                value={categoryFilter}
+                onChange={e =>
+                  setCategoryFilter(
+                    e.target.value
+                  )
+                }
+                className="px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 text-sm bg-white"
+              >
+
+                <option value="">
+                  Tất cả danh mục
+                </option>
+
+                {categories.map(category => (
+
+                  <option
+                    key={category.value}
+                    value={category.value}
+                  >
+                    {category.label}
+                  </option>
+
+                ))}
+
+              </select>
+
+
+              <button
+                onClick={fetchProducts}
+                className="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
+                title="Làm mới"
+              >
+
+                <RefreshCw className="w-4 h-4" />
+
+              </button>
+
+            </div>
+
+          </div>
+
+
+          {/* =================================================
+              TABLE
+          ================================================= */}
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
 
-            <div className="p-5 border-b border-slate-100">
+              <div>
 
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                <h2 className="font-bold text-slate-900">
+                  Danh sách sản phẩm
+                </h2>
 
-
-                <div>
-
-                  <h2 className="font-bold text-slate-900">
-                    Danh sách sản phẩm
-                  </h2>
-
-                  <p className="text-xs text-slate-500 mt-1">
-                    Tổng cộng {products.length} sản phẩm
-                  </p>
-
-                </div>
-
-
-                <div className="flex flex-col sm:flex-row gap-3">
-
-
-                  {/* SEARCH */}
-
-                  <div className="relative">
-
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-
-                    <input
-                      value={search}
-                      onChange={e =>
-                        setSearch(
-                          e.target.value
-                        )
-                      }
-                      placeholder="Tìm sản phẩm..."
-                      className="w-full sm:w-64 pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                    />
-
-                  </div>
-
-
-                  {/* CATEGORY */}
-
-                  <select
-                    value={categoryFilter}
-                    onChange={e =>
-                      setCategoryFilter(
-                        e.target.value
-                      )
-                    }
-                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-sky-400"
-                  >
-
-                    <option value="all">
-                      Tất cả danh mục
-                    </option>
-
-                    <option value="album">
-                      Album
-                    </option>
-
-                    <option value="card">
-                      Card
-                    </option>
-
-                    <option value="goods">
-                      Goods
-                    </option>
-
-                    <option value="lightstick">
-                      Lightstick
-                    </option>
-
-                  </select>
-
-                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  {products.length} sản phẩm
+                </p>
 
               </div>
 
             </div>
 
 
-            {/* ERROR */}
-
-            {error && (
-
-              <div className="m-5 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-600">
-
-                <AlertCircle className="w-5 h-5" />
-
-                <span>
-                  {error}
-                </span>
-
-              </div>
-
-            )}
-
-
-            {/* TABLE */}
-
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
 
               <div className="py-20 text-center">
 
@@ -913,33 +882,37 @@ export default function AdminProducts() {
 
                   <thead>
 
-                    <tr className="bg-slate-50 text-left text-xs font-bold text-slate-500 uppercase">
+                    <tr className="bg-slate-50 border-b border-slate-100">
 
-                      <th className="px-5 py-4">
+                      <th className="px-5 py-3 text-left text-xs font-bold text-slate-500">
                         Sản phẩm
                       </th>
 
-                      <th className="px-5 py-4">
-                        Album
+                      <th className="px-5 py-3 text-left text-xs font-bold text-slate-500">
+                        Danh mục
                       </th>
 
-                      <th className="px-5 py-4">
+                      <th className="px-5 py-3 text-left text-xs font-bold text-slate-500">
+                        Album / Version
+                      </th>
+
+                      <th className="px-5 py-3 text-right text-xs font-bold text-slate-500">
                         Giá bán
                       </th>
 
-                      <th className="px-5 py-4">
+                      <th className="px-5 py-3 text-right text-xs font-bold text-slate-500">
                         Giá nhập bình quân
                       </th>
 
-                      <th className="px-5 py-4">
+                      <th className="px-5 py-3 text-right text-xs font-bold text-slate-500">
                         Lãi dự kiến
                       </th>
 
-                      <th className="px-5 py-4">
+                      <th className="px-5 py-3 text-right text-xs font-bold text-slate-500">
                         Tồn kho
                       </th>
 
-                      <th className="px-5 py-4 text-right">
+                      <th className="px-5 py-3 text-right text-xs font-bold text-slate-500">
                         Thao tác
                       </th>
 
@@ -950,205 +923,219 @@ export default function AdminProducts() {
 
                   <tbody className="divide-y divide-slate-100">
 
-                    {filteredProducts.map(
-                      product => {
-
-                        const profit =
-                          Number(
-                            product.estimated_profit ||
-                            0
-                          );
-
-                        return (
-
-                          <tr
-                            key={product.id}
-                            className="hover:bg-slate-50 transition"
-                          >
-
-
-                            {/* PRODUCT */}
-
-                            <td className="px-5 py-4">
-
-                              <div className="flex items-center gap-3">
-
-
-                                <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
-
-                                  {product.image_url ? (
-
-                                    <img
-                                      src={product.image_url}
-                                      alt={product.title}
-                                      className="w-full h-full object-cover"
-                                    />
-
-                                  ) : (
-
-                                    <Package className="w-6 h-6 text-slate-300" />
-
-                                  )}
-
-                                </div>
-
-
-                                <div className="min-w-0">
-
-                                  <p className="font-bold text-slate-900">
-                                    {product.title}
-                                  </p>
-
-                                  <p className="text-xs text-sky-600 font-semibold mt-1">
-                                    {product.version_name}
-                                  </p>
-
-                                </div>
-
-                              </div>
-
-                            </td>
-
-
-                            {/* ALBUM */}
-
-                            <td className="px-5 py-4">
-
-                              <p className="text-sm font-semibold text-slate-700">
-                                {product.album_name || '-'}
-                              </p>
-
-                              <p className="text-xs text-slate-400 mt-1">
-                                {product.group_name || ''}
-                              </p>
-
-                            </td>
-
-
-                            {/* PRICE */}
-
-                            <td className="px-5 py-4">
-
-                              <span className="font-bold text-slate-900">
-                                {formatMoney(
-                                  product.price
-                                )}
-                              </span>
-
-                            </td>
-
-
-                            {/* IMPORT PRICE */}
-
-                            <td className="px-5 py-4">
-
-                              <span className="text-sm text-slate-600">
-                                {formatMoney(
-                                  product.average_import_price
-                                )}
-                              </span>
-
-                            </td>
-
-
-                            {/* PROFIT */}
-
-                            <td className="px-5 py-4">
-
-                              <span
-                                className={
-                                  profit >= 0
-                                    ? 'font-bold text-emerald-600'
-                                    : 'font-bold text-red-500'
-                                }
-                              >
-
-                                {formatMoney(
-                                  profit
-                                )}
-
-                              </span>
-
-                            </td>
-
-
-                            {/* STOCK */}
-
-                            <td className="px-5 py-4">
-
-                              <span
-                                className={`
-                                  inline-flex
-                                  items-center
-                                  px-2.5
-                                  py-1
-                                  rounded-lg
-                                  text-xs
-                                  font-bold
-                                  ${
-                                    Number(
-                                      product.stock
-                                    ) > 0
-
-                                      ? 'bg-emerald-50 text-emerald-600'
-
-                                      : 'bg-red-50 text-red-500'
-                                  }
-                                `}
-                              >
-
-                                {product.stock || 0}
-
-                              </span>
-
-                            </td>
-
-
-                            {/* ACTION */}
-
-                            <td className="px-5 py-4">
-
-                              <div className="flex justify-end gap-2">
-
-                                <button
-                                  onClick={() =>
-                                    openEditModal(
-                                      product
-                                    )
-                                  }
-                                  className="w-9 h-9 rounded-xl bg-sky-50 text-sky-500 hover:bg-sky-100 flex items-center justify-center"
-                                  title="Sửa"
-                                >
-
-                                  <Pencil className="w-4 h-4" />
-
-                                </button>
-
-
-                                <button
-                                  onClick={() =>
-                                    handleDelete(
-                                      product
-                                    )
-                                  }
-                                  className="w-9 h-9 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center"
-                                  title="Xóa"
-                                >
-
-                                  <Trash2 className="w-4 h-4" />
-
-                                </button>
-
-                              </div>
-
-                            </td>
-
-                          </tr>
-
+                    {products.map(product => {
+
+                      const profit =
+                        Number(
+                          product.estimated_profit || 0
                         );
 
-                      }
-                    )}
+                      return (
+
+                        <tr
+                          key={product.id}
+                          className="hover:bg-slate-50 transition"
+                        >
+
+                          {/* PRODUCT */}
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex items-center gap-3">
+
+                              <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+
+                                {product.image_url ? (
+
+                                  <img
+                                    src={product.image_url}
+                                    alt={product.title}
+                                    className="w-full h-full object-cover"
+                                  />
+
+                                ) : (
+
+                                  <Package className="w-6 h-6 text-slate-300" />
+
+                                )}
+
+                              </div>
+
+                              <div className="min-w-0">
+
+                                <p className="font-bold text-slate-900 max-w-[260px] truncate">
+                                  {product.title}
+                                </p>
+
+                                {product.is_preorder ? (
+
+                                  <span className="inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+                                    PRE-ORDER
+                                  </span>
+
+                                ) : null}
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+
+                          {/* CATEGORY */}
+
+                          <td className="px-5 py-4">
+
+                            <span className="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-600 text-xs font-bold">
+
+                              {getCategoryLabel(
+                                product.category
+                              )}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* ALBUM */}
+
+                          <td className="px-5 py-4">
+
+                            {product.album_name ? (
+
+                              <div>
+
+                                <p className="text-sm font-semibold text-slate-700">
+                                  {product.album_name}
+                                </p>
+
+                                {product.version_name && (
+
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    Version: {product.version_name}
+                                  </p>
+
+                                )}
+
+                              </div>
+
+                            ) : (
+
+                              <span className="text-xs text-slate-400">
+                                Không thuộc album
+                              </span>
+
+                            )}
+
+                          </td>
+
+
+                          {/* PRICE */}
+
+                          <td className="px-5 py-4 text-right">
+
+                            <p className="font-bold text-slate-900">
+                              {formatMoney(
+                                product.price
+                              )}
+                            </p>
+
+                          </td>
+
+
+                          {/* IMPORT PRICE */}
+
+                          <td className="px-5 py-4 text-right">
+
+                            <p className="text-sm font-semibold text-slate-600">
+                              {formatMoney(
+                                product.average_import_price
+                              )}
+                            </p>
+
+                          </td>
+
+
+                          {/* PROFIT */}
+
+                          <td className="px-5 py-4 text-right">
+
+                            <p
+                              className={`font-bold ${
+                                profit >= 0
+                                  ? 'text-emerald-600'
+                                  : 'text-red-500'
+                              }`}
+                            >
+                              {formatMoney(
+                                profit
+                              )}
+                            </p>
+
+                          </td>
+
+
+                          {/* STOCK */}
+
+                          <td className="px-5 py-4 text-right">
+
+                            <span
+                              className={`font-bold ${
+                                Number(product.stock) > 0
+                                  ? 'text-slate-700'
+                                  : 'text-red-400'
+                              }`}
+                            >
+                              {product.stock || 0}
+                            </span>
+
+                          </td>
+
+
+                          {/* ACTION */}
+
+                          <td className="px-5 py-4">
+
+                            <div className="flex justify-end gap-2">
+
+                              <button
+                                onClick={() =>
+                                  handleEdit(
+                                    product.id
+                                  )
+                                }
+                                className="w-9 h-9 rounded-xl flex items-center justify-center text-sky-500 hover:bg-sky-50 transition"
+                                title="Sửa"
+                              >
+
+                                <Pencil className="w-4 h-4" />
+
+                              </button>
+
+
+                              <button
+                                onClick={() =>
+                                  handleDelete(
+                                    product.id,
+                                    product.title
+                                  )
+                                }
+                                className="w-9 h-9 rounded-xl flex items-center justify-center text-red-400 hover:bg-red-50 transition"
+                                title="Xóa"
+                              >
+
+                                <Trash2 className="w-4 h-4" />
+
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+
+                      );
+                    })}
 
                   </tbody>
 
@@ -1179,12 +1166,11 @@ export default function AdminProducts() {
           />
 
 
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-xl max-h-[90vh] overflow-y-auto">
-
+          <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-white rounded-2xl shadow-xl">
 
             {/* HEADER */}
 
-            <div className="sticky top-0 bg-white z-10 px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="sticky top-0 z-10 bg-white px-6 py-5 border-b border-slate-100 flex items-center justify-between">
 
               <div>
 
@@ -1196,8 +1182,8 @@ export default function AdminProducts() {
 
                 </h2>
 
-                <p className="text-xs text-slate-500 mt-1">
-                  Quản lý thông tin sản phẩm
+                <p className="text-xs text-slate-400 mt-1">
+                  Thông tin sản phẩm bán tại cửa hàng
                 </p>
 
               </div>
@@ -1223,202 +1209,383 @@ export default function AdminProducts() {
               className="p-6 space-y-5"
             >
 
+              {/* CATEGORY */}
 
-              {/* ALBUM */}
+              <div>
+
+                <label className="block text-sm font-bold text-slate-700 mb-2">
+                  Danh mục
+                </label>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+
+                  {categories.map(category => (
+
+                    <button
+                      key={category.value}
+                      type="button"
+                      onClick={() =>
+                        handleCategoryChange({
+                          target: {
+                            value:
+                              category.value
+                          }
+                        })
+                      }
+                      className={`px-3 py-3 rounded-xl border text-sm font-bold transition ${
+                        form.category === category.value
+                          ? 'border-sky-400 bg-sky-50 text-sky-600'
+                          : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {category.label}
+                    </button>
+
+                  ))}
+
+                </div>
+
+              </div>
+
+
+              {/* TITLE */}
 
               <div>
 
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">
 
-                  Album
+                  Tên sản phẩm
+
                   <span className="text-red-500">
                     {' '}*
                   </span>
 
                 </label>
 
-
-                <select
-                  name="album_id"
-                  value={form.album_id}
+                <input
+                  type="text"
+                  name="title"
+                  value={form.title}
                   onChange={handleChange}
+                  maxLength={150}
+                  placeholder={
+                    form.category === 'album'
+                      ? 'Ví dụ: RIIZE - The 1st Album'
+                      : form.category === 'photocard'
+                      ? 'Ví dụ: Eunseok Lucky Draw Photocard'
+                      : form.category === 'md_event'
+                      ? 'Ví dụ: RIIZE FANCON MD'
+                      : 'Ví dụ: RIIZE OFFICIAL LIGHT STICK'
+                  }
                   disabled={saving}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                >
-
-                  <option value="">
-                    -- Chọn album --
-                  </option>
-
-
-                  {albums.map(
-                    album => (
-
-                      <option
-                        key={album.id}
-                        value={album.id}
-                      >
-
-                        {album.group_name}
-                        {' - '}
-                        {album.name}
-
-                      </option>
-
-                    )
-                  )}
-
-                </select>
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                />
 
               </div>
 
 
-              {/* TITLE + VERSION */}
+              {/* =================================================
+                  ALBUM
+              ================================================= */}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {form.category === 'album' && (
 
+                <>
 
-                <div>
+                  <div>
 
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">
 
-                    Tên sản phẩm
-                    <span className="text-red-500">
-                      {' '}*
-                    </span>
+                      Album
 
-                  </label>
+                      <span className="text-red-500">
+                        {' '}*
+                      </span>
 
-                  <input
-                    type="text"
-                    name="title"
-                    value={form.title}
-                    onChange={handleChange}
-                    maxLength={150}
-                    disabled={saving}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                  />
-
-                </div>
+                    </label>
 
 
-                <div>
+                    <div className="relative">
 
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                      <input
+                        type="text"
+                        value={albumSearch}
+                        onChange={e => {
 
-                    Version
-                    <span className="text-red-500">
-                      {' '}*
-                    </span>
+                          setAlbumSearch(
+                            e.target.value
+                          );
 
-                  </label>
+                          setShowAlbumList(true);
 
-                  <input
-                    type="text"
-                    name="version_name"
-                    value={form.version_name}
-                    onChange={handleChange}
-                    placeholder="Ví dụ: Photobook Ver."
-                    maxLength={100}
-                    disabled={saving}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                  />
+                          // Nếu người dùng sửa text
+                          // thì reset album đã chọn
+                          setForm(prev => ({
+                            ...prev,
+                            album_id: ''
+                          }));
 
-                </div>
+                        }}
+                        onFocus={() => {
 
-              </div>
+                          setShowAlbumList(true);
+
+                          if (
+                            albums.length === 0
+                          ) {
+                            fetchAlbums(
+                              albumSearch
+                            );
+                          }
+
+                        }}
+                        placeholder="Gõ tên album hoặc nhóm để tìm..."
+                        disabled={saving}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                      />
 
 
-              {/* PRICE + CATEGORY */}
+                      {showAlbumList && (
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="absolute z-30 left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-56 overflow-y-auto">
+
+                          {loadingAlbums ? (
+
+                            <div className="p-4 text-center">
+
+                              <Loader2 className="w-5 h-5 animate-spin text-sky-500 mx-auto" />
+
+                              <p className="text-xs text-slate-400 mt-2">
+                                Đang tìm album...
+                              </p>
+
+                            </div>
+
+                          ) : albums.length === 0 ? (
+
+                            <div className="p-4 text-center">
+
+                              <p className="text-sm font-semibold text-slate-500">
+                                Không tìm thấy album
+                              </p>
+
+                              <p className="text-xs text-slate-400 mt-1">
+                                Thử tìm bằng tên nhóm hoặc album khác
+                              </p>
+
+                            </div>
+
+                          ) : (
+
+                            albums.map(album => (
+
+                              <button
+                                key={album.id}
+                                type="button"
+                                onClick={() =>
+                                  selectAlbum(
+                                    album
+                                  )
+                                }
+                                className={`w-full text-left px-4 py-3 hover:bg-sky-50 transition ${
+                                  Number(
+                                    form.album_id
+                                  ) ===
+                                  Number(album.id)
+                                    ? 'bg-sky-50'
+                                    : ''
+                                }`}
+                              >
+
+                                <p className="text-sm font-bold text-slate-800">
+                                  {album.name}
+                                </p>
+
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {album.group_name ||
+                                    'Chưa có nhóm'}
+                                </p>
+
+                              </button>
+
+                            ))
+
+                          )}
+
+                        </div>
+
+                      )}
+
+                    </div>
 
 
-                <div>
+                    {form.album_id && (
 
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                      <p className="text-xs text-emerald-600 font-semibold mt-2">
+                        ✓ Đã chọn: {form.album_name}
+                      </p>
 
-                    Giá bán
-                    <span className="text-red-500">
-                      {' '}*
-                    </span>
-
-                  </label>
-
-                  <div className="relative">
-
-                    <input
-                      type="number"
-                      name="price"
-                      value={form.price}
-                      onChange={handleChange}
-                      min="0"
-                      step="1000"
-                      placeholder="0"
-                      disabled={saving}
-                      className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
-                    />
-
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                      VNĐ
-                    </span>
+                    )}
 
                   </div>
 
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Giá bán hiện tại của sản phẩm
+
+                  {/* VERSION */}
+
+                  <div>
+
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">
+
+                      Version
+
+                      <span className="text-red-500">
+                        {' '}*
+                      </span>
+
+                    </label>
+
+                    <input
+                      type="text"
+                      name="version_name"
+                      value={form.version_name}
+                      onChange={handleChange}
+                      maxLength={100}
+                      placeholder="Ví dụ: Photobook Ver."
+                      disabled={saving}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                    />
+
+                    <p className="text-xs text-slate-400 mt-1.5">
+                      Mỗi version trong cùng một album phải có tên khác nhau.
+                    </p>
+
+                  </div>
+
+                </>
+
+              )}
+
+
+              {/* =================================================
+                  PRICE
+              ================================================= */}
+
+              <div>
+
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">
+
+                  Giá bán
+
+                  <span className="text-red-500">
+                    {' '}*
+                  </span>
+
+                </label>
+
+                <div className="relative">
+
+                  <input
+                    type="number"
+                    name="price"
+                    value={form.price}
+                    onChange={handleChange}
+                    min="0"
+                    step="1000"
+                    placeholder="0"
+                    disabled={saving}
+                    className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                  />
+
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                    ₫
+                  </span>
+
+                </div>
+
+                <p className="text-xs text-slate-400 mt-1.5">
+                  Giá nhập sẽ được lấy từ phiếu nhập hàng và tính bình quân.
+                </p>
+
+              </div>
+
+
+              {/* =================================================
+                  PREORDER
+              ================================================= */}
+
+              <div className="flex items-center justify-between border border-slate-200 rounded-xl p-4">
+
+                <div>
+
+                  <p className="text-sm font-bold text-slate-700">
+                    Sản phẩm Pre-order
+                  </p>
+
+                  <p className="text-xs text-slate-400 mt-1">
+                    Đánh dấu nếu sản phẩm đang mở đặt trước.
                   </p>
 
                 </div>
 
+                <button
+                  type="button"
+                  onClick={() =>
+                    setForm(prev => ({
+                      ...prev,
+                      is_preorder:
+                        !prev.is_preorder
+                    }))
+                  }
+                  disabled={saving}
+                  className={`relative w-11 h-6 rounded-full transition ${
+                    form.is_preorder
+                      ? 'bg-sky-500'
+                      : 'bg-slate-300'
+                  }`}
+                >
 
-                <div>
+                  <span
+                    className={`absolute top-1 w-4 h-4 bg-white rounded-full transition ${
+                      form.is_preorder
+                        ? 'left-6'
+                        : 'left-1'
+                    }`}
+                  />
 
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
-
-                    Danh mục
-
-                  </label>
-
-                  <select
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    disabled={saving}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400"
-                  >
-
-                    <option value="album">
-                      Album
-                    </option>
-
-                    <option value="card">
-                      Card
-                    </option>
-
-                    <option value="goods">
-                      Goods
-                    </option>
-
-                    <option value="lightstick">
-                      Lightstick
-                    </option>
-
-                  </select>
-
-                </div>
+                </button>
 
               </div>
 
 
-              {/* IMAGE */}
+              {/* RELEASE DATE */}
+
+              <div>
+
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                  Ngày phát hành
+                </label>
+
+                <input
+                  type="date"
+                  name="release_date"
+                  value={form.release_date}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                />
+
+              </div>
+
+
+              {/* =================================================
+                  IMAGE
+              ================================================= */}
 
               <div>
 
                 <label className="block text-sm font-bold text-slate-700 mb-2">
                   Ảnh sản phẩm
                 </label>
-
 
                 <input
                   ref={fileInputRef}
@@ -1429,8 +1596,9 @@ export default function AdminProducts() {
                 />
 
 
-                <div className="flex gap-4">
+                <div className="flex items-start gap-4">
 
+                  {/* PREVIEW */}
 
                   <div className="w-32 h-32 aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0">
 
@@ -1446,9 +1614,9 @@ export default function AdminProducts() {
 
                       <div className="text-center">
 
-                        <ImagePlus className="w-8 h-8 text-slate-300 mx-auto" />
+                        <ImagePlus className="w-8 h-8 text-slate-300 mx-auto mb-1" />
 
-                        <p className="text-[11px] text-slate-400 mt-1">
+                        <p className="text-[11px] text-slate-400">
                           Ảnh 1:1
                         </p>
 
@@ -1467,7 +1635,7 @@ export default function AdminProducts() {
                         fileInputRef.current?.click()
                       }
                       disabled={saving}
-                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                      className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50 transition"
                     >
 
                       <span className="flex items-center gap-2">
@@ -1480,68 +1648,25 @@ export default function AdminProducts() {
 
                     </button>
 
-
                     <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-
                       JPG, PNG hoặc WEBP
                       <br />
                       Tối đa 5MB
                       <br />
                       Khuyến nghị ảnh vuông 1:1
-
                     </p>
+
+                    {form.image && (
+
+                      <p className="text-xs text-sky-600 font-semibold mt-2 max-w-[300px] truncate">
+                        {form.image.name}
+                      </p>
+
+                    )}
 
                   </div>
 
                 </div>
-
-              </div>
-
-
-              {/* PREORDER */}
-
-              <label className="flex items-center gap-3 cursor-pointer">
-
-                <input
-                  type="checkbox"
-                  name="is_preorder"
-                  checked={form.is_preorder}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="w-4 h-4 accent-sky-500"
-                />
-
-                <div>
-
-                  <p className="text-sm font-bold text-slate-700">
-                    Sản phẩm Pre-order
-                  </p>
-
-                  <p className="text-xs text-slate-400">
-                    Đánh dấu nếu sản phẩm đang mở đặt trước
-                  </p>
-
-                </div>
-
-              </label>
-
-
-              {/* RELEASE DATE */}
-
-              <div>
-
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Ngày phát hành
-                </label>
-
-                <input
-                  type="date"
-                  name="release_date"
-                  value={form.release_date}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400"
-                />
 
               </div>
 
@@ -1559,36 +1684,17 @@ export default function AdminProducts() {
                   value={form.description}
                   onChange={handleChange}
                   rows={4}
-                  disabled={saving}
                   placeholder="Mô tả sản phẩm..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none resize-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+                  disabled={saving}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none resize-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
                 />
 
               </div>
 
 
-              {/* NOTE */}
-
-              {!editingId && (
-
-                <div className="bg-sky-50 border border-sky-100 rounded-xl p-4">
-
-                  <p className="text-xs text-sky-700 leading-relaxed">
-
-                    <strong>Lưu ý:</strong>{' '}
-
-                    Sản phẩm mới sẽ có tồn kho bằng 0.
-                    Tồn kho sẽ được cập nhật thông qua
-                    chức năng <strong>Quản lý Phiếu nhập</strong>.
-
-                  </p>
-
-                </div>
-
-              )}
-
-
-              {/* BUTTON */}
+              {/* =================================================
+                  BUTTON
+              ================================================= */}
 
               <div className="flex justify-end gap-3 pt-2">
 
@@ -1596,7 +1702,7 @@ export default function AdminProducts() {
                   type="button"
                   onClick={closeModal}
                   disabled={saving}
-                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50"
+                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50"
                 >
                   Hủy
                 </button>
@@ -1612,6 +1718,7 @@ export default function AdminProducts() {
 
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
+
                       Đang lưu...
                     </>
 
@@ -1623,7 +1730,6 @@ export default function AdminProducts() {
                       {editingId
                         ? 'Lưu thay đổi'
                         : 'Thêm sản phẩm'}
-
                     </>
 
                   )}
@@ -1641,7 +1747,5 @@ export default function AdminProducts() {
       )}
 
     </div>
-
   );
-
 }
