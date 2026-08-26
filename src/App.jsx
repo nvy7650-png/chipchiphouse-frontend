@@ -9,6 +9,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminCategories from './pages/AdminCategories';
 import AdminGroups from './pages/AdminGroups';
 import GroupDetail from './pages/GroupDetail';
+import AdminProducts from './pages/AdminProducts';
 
 export default function App() {
   return (
@@ -42,6 +43,11 @@ export default function App() {
           path="/admin/groups/:id"
           element={<GroupDetail />}
         />
+
+        <Route
+  path="/admin/products"
+  element={<AdminProducts />}
+/>
 
       </Routes>
     </BrowserRouter>
