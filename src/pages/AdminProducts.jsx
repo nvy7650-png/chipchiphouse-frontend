@@ -1003,10 +1003,6 @@ export default function AdminProducts() {
                                     {product.version_name}
                                   </p>
 
-                                  <p className="text-[11px] text-slate-400 mt-1">
-                                    #{product.id}
-                                  </p>
-
                                 </div>
 
                               </div>
@@ -1298,7 +1294,6 @@ export default function AdminProducts() {
                     name="title"
                     value={form.title}
                     onChange={handleChange}
-                    placeholder="Ví dụ: RIIZE - Album"
                     maxLength={150}
                     disabled={saving}
                     className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
