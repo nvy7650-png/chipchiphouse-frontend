@@ -279,18 +279,14 @@ export default function AdminOrders() {
     try {
       setCreating(true);
 
-      // Chuẩn hóa dữ liệu gửi lên Backend (bao gồm cả fallback email & format items)
+      // Chuẩn hóa dữ liệu gửi lên Backend (khớp với req.body của Backend)
       const payload = {
         customer_name: createForm.customer_name,
-        customer_phone: createForm.customer_phone,
-        customer_email: createForm.customer_email || "", // Gửi chuỗi rỗng nếu khách vãng lai không có email
-        shipping_address: createForm.shipping_address || "Tại cửa hàng",
+        phone: createForm.customer_phone, // <--- ĐÃ SỬA: Đổi customer_phone thành phone
+        address: createForm.shipping_address || "Tại cửa hàng",
         payment_method: createForm.payment_method || "COD",
-        total_amount: calculateTotalOrderAmount(),
         items: createForm.items.map(item => ({
           product_id: item.product_id,
-          productId: item.product_id, // Dự phòng nếu Backend dùng camelCase
-          title: item.title,
           price: Number(item.price),
           quantity: Number(item.quantity)
         }))
@@ -302,7 +298,6 @@ export default function AdminOrders() {
       await fetchOrders();
     } catch (err) {
       console.error('Lỗi tạo đơn hàng chi tiết:', err.response?.data || err);
-      // Hiển thị thông báo chi tiết từ backend nếu có
       const backendMessage = err.response?.data?.message || err.response?.data?.error;
       alert(backendMessage ? `Lỗi: ${backendMessage}` : 'Không thể tạo đơn hàng! Vui lòng kiểm tra lại thông tin.');
     } finally {
