@@ -1,94 +1,221 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState
+} from 'react';
+
 import axios from 'axios';
+
 import AdminSidebar from '../components/AdminSidebar';
 
 import {
   Plus,
   Search,
-  ShoppingBag,
+  ShoppingCart,
   Eye,
-  Pencil,
-  Trash2,
+  Printer,
   X,
   Loader2,
-  RefreshCw,
-  Printer,
-  ChevronDown,
-  Minus,
   User,
   Phone,
   MapPin,
   Package,
+  Minus,
+  Trash2,
+  ChevronDown,
+  RefreshCw,
+  CheckCircle2,
+  Clock3,
+  Truck,
+  Ban,
+  CircleCheck,
   AlertCircle
 } from 'lucide-react';
 
+
+// ============================================================
+// MAIN
+// ============================================================
+
 export default function AdminOrders() {
-  const API_URL = import.meta.env.VITE_API_URL;
 
-  // =========================================================
+  const API_URL =
+    import.meta.env.VITE_API_URL;
+
+
+  // ==========================================================
   // SIDEBAR
-  // =========================================================
+  // ==========================================================
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [
+    sidebarOpen,
+    setSidebarOpen
+  ] = useState(false);
 
-  // =========================================================
+
+  // ==========================================================
   // ORDERS
-  // =========================================================
+  // ==========================================================
 
-  const [orders, setOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
-  const [orderError, setOrderError] = useState('');
+  const [
+    orders,
+    setOrders
+  ] = useState([]);
 
-  // =========================================================
-  // SEARCH / FILTER
-  // =========================================================
+  const [
+    loadingOrders,
+    setLoadingOrders
+  ] = useState(true);
 
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [
+    orderError,
+    setOrderError
+  ] = useState('');
 
-  // =========================================================
-  // CREATE ORDER
-  // =========================================================
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [creating, setCreating] = useState(false);
+  // ==========================================================
+  // ORDER SEARCH
+  // ==========================================================
 
-  // =========================================================
-  // VIEW ORDER
-  // =========================================================
+  const [
+    search,
+    setSearch
+  ] = useState('');
 
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [
+    statusFilter,
+    setStatusFilter
+  ] = useState('');
 
-  // =========================================================
-  // UPDATE STATUS
-  // =========================================================
 
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  // ==========================================================
+  // CREATE MODAL
+  // ==========================================================
 
-  // =========================================================
+  const [
+    showCreateModal,
+    setShowCreateModal
+  ] = useState(false);
+
+  const [
+    creating,
+    setCreating
+  ] = useState(false);
+
+
+  // ==========================================================
+  // DETAIL MODAL
+  // ==========================================================
+
+  const [
+    showDetailModal,
+    setShowDetailModal
+  ] = useState(false);
+
+  const [
+    selectedOrder,
+    setSelectedOrder
+  ] = useState(null);
+
+  const [
+    loadingDetail,
+    setLoadingDetail
+  ] = useState(false);
+
+
+  // ==========================================================
+  // STATUS UPDATE
+  // ==========================================================
+
+  const [
+    updatingStatus,
+    setUpdatingStatus
+  ] = useState(false);
+
+
+  // ==========================================================
   // PRODUCTS
-  // =========================================================
+  // ==========================================================
 
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [
+    products,
+    setProducts
+  ] = useState([]);
 
-  // =========================================================
-  // PRODUCT SEARCH
-  // =========================================================
+  const [
+    loadingProducts,
+    setLoadingProducts
+  ] = useState(false);
 
-  const [productSearch, setProductSearch] = useState('');
 
-  // =========================================================
-  // CUSTOMER SEARCH
-  // =========================================================
+  // ==========================================================
+  // CUSTOMERS
+  // ==========================================================
 
-  const [customerSearch, setCustomerSearch] = useState('');
+  const [
+    customers,
+    setCustomers
+  ] = useState([]);
 
-  // =========================================================
-  // CREATE FORM
-  // =========================================================
+  const [
+    loadingCustomers,
+    setLoadingCustomers
+  ] = useState(false);
+
+
+  // ==========================================================
+  // PRODUCT SEARCH IN CREATE BILL
+  // ==========================================================
+
+  const [
+    productSearch,
+    setProductSearch
+  ] = useState('');
+
+  const [
+    showProductList,
+    setShowProductList
+  ] = useState(false);
+
+
+  // ==========================================================
+  // CUSTOMER SEARCH IN CREATE BILL
+  // ==========================================================
+
+  const [
+    customerSearch,
+    setCustomerSearch
+  ] = useState('');
+
+  const [
+    showCustomerList,
+    setShowCustomerList
+  ] = useState(false);
+
+
+  // ==========================================================
+  // SELECTED PRODUCT
+  // ==========================================================
+
+  const [
+    selectedProduct,
+    setSelectedProduct
+  ] = useState(null);
+
+  const [
+    selectedQuantity,
+    setSelectedQuantity
+  ] = useState(1);
+
+  const [
+    selectedPrice,
+    setSelectedPrice
+  ] = useState('');
+
+
+  // ==========================================================
+  // CREATE ORDER FORM
+  // ==========================================================
 
   const emptyOrderForm = {
     user_id: '',
@@ -99,25 +226,17 @@ export default function AdminOrders() {
     items: []
   };
 
-  const [orderForm, setOrderForm] = useState(emptyOrderForm);
+  const [
+    orderForm,
+    setOrderForm
+  ] = useState(emptyOrderForm);
 
-  // =========================================================
-  // PRODUCT SELECTED
-  // =========================================================
 
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
-  const [selectedPrice, setSelectedPrice] = useState('');
-
-  // =========================================================
+  // ==========================================================
   // STATUS
-  // =========================================================
+  // ==========================================================
 
   const statuses = [
-    {
-      value: '',
-      label: 'Tất cả trạng thái'
-    },
     {
       value: 'PENDING',
       label: 'Chờ xử lý'
@@ -140,9 +259,10 @@ export default function AdminOrders() {
     }
   ];
 
-  // =========================================================
-  // CATEGORY
-  // =========================================================
+
+  // ==========================================================
+  // CATEGORY LABEL
+  // ==========================================================
 
   const categoryLabel = {
     album: 'Album',
@@ -151,25 +271,179 @@ export default function AdminOrders() {
     lightstick: 'Lightstick'
   };
 
-  // =========================================================
+
+  // ==========================================================
+  // FORMAT MONEY
+  // ==========================================================
+
+  const formatMoney = (value) => {
+
+    const number =
+      Number(value || 0);
+
+    return (
+      number.toLocaleString('vi-VN') +
+      ' ₫'
+    );
+  };
+
+
+  // ==========================================================
+  // FORMAT DATE
+  // ==========================================================
+
+  const formatDate = (value) => {
+
+    if (!value) {
+      return '--';
+    }
+
+    const date =
+      new Date(value);
+
+    if (
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return value;
+    }
+
+    return date.toLocaleString(
+      'vi-VN'
+    );
+  };
+
+
+  // ==========================================================
+  // STATUS LABEL
+  // ==========================================================
+
+  const getStatusLabel = (status) => {
+
+    const item =
+      statuses.find(
+        (item) =>
+          item.value === status
+      );
+
+    return (
+      item?.label ||
+      status ||
+      '--'
+    );
+  };
+
+
+  // ==========================================================
+  // STATUS STYLE
+  // ==========================================================
+
+  const getStatusClass = (status) => {
+
+    switch (status) {
+
+      case 'PENDING':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+
+      case 'CONFIRMED':
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+
+      case 'SHIPPING':
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+
+      case 'COMPLETED':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+
+      case 'CANCELLED':
+        return 'bg-red-50 text-red-700 border-red-200';
+
+      default:
+        return 'bg-slate-50 text-slate-600 border-slate-200';
+    }
+  };
+
+
+  // ==========================================================
+  // STATUS ICON
+  // ==========================================================
+
+  const StatusIcon = ({
+    status
+  }) => {
+
+    if (
+      status === 'PENDING'
+    ) {
+      return (
+        <Clock3 className="w-4 h-4" />
+      );
+    }
+
+    if (
+      status === 'CONFIRMED'
+    ) {
+      return (
+        <CheckCircle2 className="w-4 h-4" />
+      );
+    }
+
+    if (
+      status === 'SHIPPING'
+    ) {
+      return (
+        <Truck className="w-4 h-4" />
+      );
+    }
+
+    if (
+      status === 'COMPLETED'
+    ) {
+      return (
+        <CircleCheck className="w-4 h-4" />
+      );
+    }
+
+    if (
+      status === 'CANCELLED'
+    ) {
+      return (
+        <Ban className="w-4 h-4" />
+      );
+    }
+
+    return (
+      <AlertCircle className="w-4 h-4" />
+    );
+  };
+
+
+  // ==========================================================
   // LOAD ORDERS
-  // =========================================================
+  // ==========================================================
 
   const fetchOrders = async () => {
+
     try {
+
       setLoadingOrders(true);
       setOrderError('');
 
-      const res = await axios.get(
-        `${API_URL}/orders`
-      );
+      const res =
+        await axios.get(
+          `${API_URL}/orders`
+        );
 
       setOrders(
-        Array.isArray(res.data?.orders)
+        Array.isArray(
+          res.data?.orders
+        )
           ? res.data.orders
           : []
       );
+
     } catch (error) {
+
       console.error(
         'Lỗi lấy đơn hàng:',
         error
@@ -179,232 +453,506 @@ export default function AdminOrders() {
         error.response?.data?.message ||
         'Không thể lấy danh sách đơn hàng!'
       );
+
     } finally {
+
       setLoadingOrders(false);
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
 
-  // =========================================================
+  // ==========================================================
   // LOAD PRODUCTS
-  // =========================================================
+  // ==========================================================
 
   const fetchProducts = async () => {
+
     try {
+
       setLoadingProducts(true);
 
-      const res = await axios.get(
-        `${API_URL}/orders/products`
-      );
+      const res =
+        await axios.get(
+          `${API_URL}/orders/products`
+        );
 
       setProducts(
-        Array.isArray(res.data?.products)
+        Array.isArray(
+          res.data?.products
+        )
           ? res.data.products
           : []
       );
+
     } catch (error) {
+
       console.error(
         'Lỗi lấy sản phẩm:',
         error
       );
+
     } finally {
+
       setLoadingProducts(false);
     }
   };
 
-  // =========================================================
-  // INITIAL LOAD PRODUCTS
-  // =========================================================
+
+  // ==========================================================
+  // LOAD CUSTOMERS
+  // ==========================================================
+
+  const fetchCustomers = async () => {
+
+    try {
+
+      setLoadingCustomers(true);
+
+      const res =
+        await axios.get(
+          `${API_URL}/orders/customers`
+        );
+
+      setCustomers(
+        Array.isArray(
+          res.data?.customers
+        )
+          ? res.data.customers
+          : []
+      );
+
+    } catch (error) {
+
+      console.error(
+        'Lỗi lấy khách hàng:',
+        error
+      );
+
+    } finally {
+
+      setLoadingCustomers(false);
+    }
+  };
+
+
+  // ==========================================================
+  // INITIAL LOAD
+  // ==========================================================
 
   useEffect(() => {
+
+    fetchOrders();
     fetchProducts();
+    fetchCustomers();
+
   }, []);
 
-  // =========================================================
+
+  // ==========================================================
   // FILTER ORDERS
   //
-  // QUAN TRỌNG:
-  // KHÔNG GỌI API KHI NHẬP SEARCH
-  // =========================================================
+  // LOCAL ONLY
+  // KHÔNG REQUEST KHI GÕ
+  // ==========================================================
 
   const filteredOrders = useMemo(() => {
+
     const keyword =
-      search.trim().toLowerCase();
+      search
+        .trim()
+        .toLowerCase();
 
-    return orders.filter((order) => {
-      const matchesSearch =
-        !keyword ||
-        String(order.id || '')
-          .toLowerCase()
-          .includes(keyword) ||
-        String(order.customer_name || '')
-          .toLowerCase()
-          .includes(keyword) ||
-        String(order.user_name || '')
-          .toLowerCase()
-          .includes(keyword) ||
-        String(order.phone || '')
-          .toLowerCase()
-          .includes(keyword);
+    return orders.filter(
+      (order) => {
 
-      const matchesStatus =
-        !statusFilter ||
-        order.status === statusFilter;
+        const matchesSearch =
+          !keyword ||
 
-      return (
-        matchesSearch &&
-        matchesStatus
-      );
-    });
+          String(
+            order.id || ''
+          )
+            .toLowerCase()
+            .includes(keyword) ||
+
+          String(
+            order.customer_name ||
+            ''
+          )
+            .toLowerCase()
+            .includes(keyword) ||
+
+          String(
+            order.user_name ||
+            ''
+          )
+            .toLowerCase()
+            .includes(keyword) ||
+
+          String(
+            order.phone ||
+            ''
+          )
+            .toLowerCase()
+            .includes(keyword);
+
+        const matchesStatus =
+          !statusFilter ||
+          order.status ===
+            statusFilter;
+
+        return (
+          matchesSearch &&
+          matchesStatus
+        );
+      }
+    );
+
   }, [
     orders,
     search,
     statusFilter
   ]);
 
-  // =========================================================
-  // FORMAT MONEY
-  // =========================================================
 
-  const formatMoney = (value) => {
-    const number = Number(value || 0);
+  // ==========================================================
+  // PRODUCT SEARCH
+  //
+  // LOCAL ONLY
+  // ==========================================================
 
-    return number.toLocaleString(
-      'vi-VN'
-    ) + ' ₫';
-  };
+  const filteredProducts = useMemo(() => {
 
-  // =========================================================
-  // FORMAT DATE
-  // =========================================================
+    const keyword =
+      productSearch
+        .trim()
+        .toLowerCase();
 
-  const formatDate = (value) => {
-    if (!value) {
-      return '--';
+    if (!keyword) {
+      return [];
     }
 
-    const date = new Date(value);
+    return products
+      .filter((product) => {
 
-    if (isNaN(date.getTime())) {
-      return value;
+        const title =
+          String(
+            product.title || ''
+          )
+            .toLowerCase();
+
+        const version =
+          String(
+            product.version_name ||
+            ''
+          )
+            .toLowerCase();
+
+        const album =
+          String(
+            product.album_name ||
+            ''
+          )
+            .toLowerCase();
+
+        const group =
+          String(
+            product.group_name ||
+            ''
+          )
+            .toLowerCase();
+
+        return (
+          title.includes(keyword) ||
+          version.includes(keyword) ||
+          album.includes(keyword) ||
+          group.includes(keyword)
+        );
+      })
+      .slice(0, 10);
+
+  }, [
+    products,
+    productSearch
+  ]);
+
+
+  // ==========================================================
+  // CUSTOMER SEARCH
+  //
+  // LOCAL ONLY
+  // ==========================================================
+
+  const filteredCustomers = useMemo(() => {
+
+    const keyword =
+      customerSearch
+        .trim()
+        .toLowerCase();
+
+    if (!keyword) {
+      return [];
     }
 
-    return date.toLocaleString(
-      'vi-VN'
-    );
-  };
+    return customers
+      .filter((customer) => {
 
-  // =========================================================
-  // STATUS LABEL
-  // =========================================================
+        const name =
+          String(
+            customer.name || ''
+          )
+            .toLowerCase();
 
-  const getStatusLabel = (status) => {
-    const item = statuses.find(
-      (x) => x.value === status
-    );
+        const phone =
+          String(
+            customer.phone || ''
+          )
+            .toLowerCase();
 
-    return item?.label || status || '--';
-  };
+        const email =
+          String(
+            customer.email || ''
+          )
+            .toLowerCase();
 
-  // =========================================================
-  // STATUS CLASS
-  // =========================================================
+        return (
+          name.includes(keyword) ||
+          phone.includes(keyword) ||
+          email.includes(keyword)
+        );
+      })
+      .slice(0, 10);
 
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'PENDING':
-        return 'bg-amber-50 text-amber-600';
+  }, [
+    customers,
+    customerSearch
+  ]);
 
-      case 'CONFIRMED':
-        return 'bg-sky-50 text-sky-600';
 
-      case 'SHIPPING':
-        return 'bg-violet-50 text-violet-600';
-
-      case 'COMPLETED':
-        return 'bg-emerald-50 text-emerald-600';
-
-      case 'CANCELLED':
-        return 'bg-red-50 text-red-600';
-
-      default:
-        return 'bg-slate-100 text-slate-500';
-    }
-  };
-
-  // =========================================================
+  // ==========================================================
   // RESET CREATE FORM
-  // =========================================================
+  // ==========================================================
 
   const resetCreateForm = () => {
-    setOrderForm(emptyOrderForm);
+
+    setOrderForm(
+      emptyOrderForm
+    );
+
+    setProductSearch('');
+    setCustomerSearch('');
+
+    setShowProductList(false);
+    setShowCustomerList(false);
 
     setSelectedProduct(null);
     setSelectedQuantity(1);
     setSelectedPrice('');
-
-    setProductSearch('');
-    setCustomerSearch('');
   };
 
-  // =========================================================
+
+  // ==========================================================
   // OPEN CREATE MODAL
-  // =========================================================
+  // ==========================================================
 
   const openCreateModal = () => {
+
     resetCreateForm();
+
     setShowCreateModal(true);
   };
 
-  // =========================================================
+
+  // ==========================================================
   // CLOSE CREATE MODAL
-  // =========================================================
+  // ==========================================================
 
   const closeCreateModal = () => {
+
     if (creating) {
       return;
     }
 
     setShowCreateModal(false);
+
     resetCreateForm();
   };
 
-  // =========================================================
-  // ADD PRODUCT
-  // =========================================================
 
-  const addProductToOrder = () => {
+  // ==========================================================
+  // SELECT CUSTOMER
+  // ==========================================================
+
+  const handleSelectCustomer = (
+    customer
+  ) => {
+
+    setOrderForm(
+      (prev) => ({
+        ...prev,
+
+        user_id:
+          customer.id,
+
+        customer_name:
+          customer.name || '',
+
+        phone:
+          customer.phone || ''
+      })
+    );
+
+    setCustomerSearch(
+      customer.phone ||
+      customer.name ||
+      ''
+    );
+
+    setShowCustomerList(false);
+  };
+
+
+  // ==========================================================
+  // CUSTOMER INPUT
+  // ==========================================================
+
+  const handleCustomerSearch = (
+    value
+  ) => {
+
+    setCustomerSearch(value);
+
+    setShowCustomerList(
+      value.trim().length > 0
+    );
+
+    // Nếu xóa ô tìm kiếm
+    // thì cho nhập khách mới
+
+    if (!value.trim()) {
+
+      setOrderForm(
+        (prev) => ({
+          ...prev,
+          user_id: '',
+          customer_name: '',
+          phone: ''
+        })
+      );
+    }
+  };
+
+
+  // ==========================================================
+  // MANUAL CUSTOMER NAME
+  // ==========================================================
+
+  const handleCustomerNameChange = (
+    value
+  ) => {
+
+    setOrderForm(
+      (prev) => ({
+        ...prev,
+        customer_name: value
+      })
+    );
+  };
+
+
+  // ==========================================================
+  // MANUAL PHONE
+  // ==========================================================
+
+  const handlePhoneChange = (
+    value
+  ) => {
+
+    setOrderForm(
+      (prev) => ({
+        ...prev,
+        phone: value
+      })
+    );
+  };
+
+
+  // ==========================================================
+  // SELECT PRODUCT
+  // ==========================================================
+
+  const handleSelectProduct = (
+    product
+  ) => {
+
+    setSelectedProduct(
+      product
+    );
+
+    setSelectedPrice(
+      product.price ?? ''
+    );
+
+    setSelectedQuantity(1);
+
+    setProductSearch(
+      product.title || ''
+    );
+
+    setShowProductList(false);
+  };
+
+
+  // ==========================================================
+  // ADD PRODUCT TO BILL
+  // ==========================================================
+
+  const handleAddProduct = () => {
+
     if (!selectedProduct) {
-      alert('Vui lòng chọn sản phẩm!');
+
+      alert(
+        'Vui lòng chọn sản phẩm!'
+      );
+
       return;
     }
 
-    const quantity = Number(
-      selectedQuantity
-    );
+    const price =
+      Number(selectedPrice);
 
-    const price = Number(
-      selectedPrice
-    );
+    const quantity =
+      Number(selectedQuantity);
 
-    if (
-      !quantity ||
-      quantity < 1
-    ) {
-      alert('Số lượng không hợp lệ!');
-      return;
-    }
 
     if (
-      isNaN(price) ||
+      !Number.isFinite(price) ||
       price < 0
     ) {
-      alert('Giá bán không hợp lệ!');
+
+      alert(
+        'Giá bán không hợp lệ!'
+      );
+
       return;
     }
+
+
+    if (
+      !Number.isInteger(quantity) ||
+      quantity <= 0
+    ) {
+
+      alert(
+        'Số lượng không hợp lệ!'
+      );
+
+      return;
+    }
+
+
+    // ========================================================
+    // KIỂM TRA SẢN PHẨM ĐÃ CÓ TRONG BILL
+    // ========================================================
 
     const existingIndex =
       orderForm.items.findIndex(
@@ -413,26 +961,42 @@ export default function AdminOrders() {
           Number(selectedProduct.id)
       );
 
-    if (existingIndex >= 0) {
-      const newItems = [
-        ...orderForm.items
-      ];
 
-      newItems[existingIndex] = {
-        ...newItems[existingIndex],
+    if (
+      existingIndex >= 0
+    ) {
+
+      const newItems =
+        [...orderForm.items];
+
+      const existing =
+        newItems[
+          existingIndex
+        ];
+
+      newItems[
+        existingIndex
+      ] = {
+        ...existing,
+
         quantity:
-          Number(
-            newItems[existingIndex].quantity
-          ) + quantity,
+          Number(existing.quantity) +
+          quantity,
+
         price
       };
 
-      setOrderForm({
-        ...orderForm,
-        items: newItems
-      });
+      setOrderForm(
+        (prev) => ({
+          ...prev,
+          items: newItems
+        })
+      );
+
     } else {
+
       const newItem = {
+
         product_id:
           selectedProduct.id,
 
@@ -442,225 +1006,286 @@ export default function AdminOrders() {
         version_name:
           selectedProduct.version_name,
 
-        image_url:
-          selectedProduct.image_url,
+        album_name:
+          selectedProduct.album_name,
 
         category:
           selectedProduct.category,
+
+        image_url:
+          selectedProduct.image_url,
 
         price,
 
         quantity
       };
 
-      setOrderForm({
-        ...orderForm,
-        items: [
-          ...orderForm.items,
-          newItem
-        ]
-      });
+
+      setOrderForm(
+        (prev) => ({
+          ...prev,
+
+          items: [
+            ...prev.items,
+            newItem
+          ]
+        })
+      );
     }
+
+
+    // Reset vùng chọn
 
     setSelectedProduct(null);
     setSelectedQuantity(1);
     setSelectedPrice('');
     setProductSearch('');
+    setShowProductList(false);
   };
 
-  // =========================================================
+
+  // ==========================================================
   // REMOVE ITEM
-  // =========================================================
+  // ==========================================================
 
-  const removeOrderItem = (index) => {
-    const newItems =
-      orderForm.items.filter(
-        (_, itemIndex) =>
-          itemIndex !== index
-      );
+  const removeOrderItem = (
+    index
+  ) => {
 
-    setOrderForm({
-      ...orderForm,
-      items: newItems
-    });
+    setOrderForm(
+      (prev) => ({
+        ...prev,
+
+        items:
+          prev.items.filter(
+            (_, itemIndex) =>
+              itemIndex !== index
+          )
+      })
+    );
   };
 
-  // =========================================================
-  // CHANGE QUANTITY
-  // =========================================================
+
+  // ==========================================================
+  // CHANGE ITEM QUANTITY
+  // ==========================================================
 
   const changeItemQuantity = (
     index,
     amount
   ) => {
-    const newItems =
-      [...orderForm.items];
 
-    const current =
-      Number(
-        newItems[index].quantity
-      );
+    setOrderForm(
+      (prev) => {
 
-    const next =
-      current + amount;
+        const items =
+          [...prev.items];
 
-    if (next <= 0) {
-      removeOrderItem(index);
-      return;
-    }
+        const current =
+          Number(
+            items[index].quantity || 0
+          );
 
-    newItems[index] = {
-      ...newItems[index],
-      quantity: next
-    };
+        const next =
+          current + amount;
 
-    setOrderForm({
-      ...orderForm,
-      items: newItems
-    });
+
+        if (next <= 0) {
+
+          return {
+            ...prev,
+
+            items:
+              items.filter(
+                (_, itemIndex) =>
+                  itemIndex !== index
+              )
+          };
+        }
+
+
+        items[index] = {
+          ...items[index],
+          quantity: next
+        };
+
+
+        return {
+          ...prev,
+          items
+        };
+      }
+    );
   };
 
-  // =========================================================
+
+  // ==========================================================
   // CHANGE ITEM PRICE
-  // =========================================================
+  // ==========================================================
 
   const changeItemPrice = (
     index,
     value
   ) => {
-    const newItems =
-      [...orderForm.items];
 
-    newItems[index] = {
-      ...newItems[index],
-      price: value
-    };
+    setOrderForm(
+      (prev) => {
 
-    setOrderForm({
-      ...orderForm,
-      items: newItems
-    });
+        const items =
+          [...prev.items];
+
+        items[index] = {
+          ...items[index],
+          price: value
+        };
+
+        return {
+          ...prev,
+          items
+        };
+      }
+    );
   };
 
-  // =========================================================
-  // TOTAL
-  // =========================================================
+
+  // ==========================================================
+  // ORDER TOTAL
+  // ==========================================================
 
   const orderTotal = useMemo(() => {
+
     return orderForm.items.reduce(
-      (total, item) => {
+      (
+        total,
+        item
+      ) => {
+
         return (
           total +
-          Number(item.price || 0) *
-            Number(item.quantity || 0)
+          Number(
+            item.price || 0
+          ) *
+          Number(
+            item.quantity || 0
+          )
         );
       },
       0
     );
-  }, [orderForm.items]);
 
-  // =========================================================
-  // PRODUCT SEARCH RESULT
-  // =========================================================
+  }, [
+    orderForm.items
+  ]);
 
-  const filteredProducts =
-    useMemo(() => {
-      const keyword =
-        productSearch
-          .trim()
-          .toLowerCase();
 
-      if (!keyword) {
-        return products.slice(0, 20);
-      }
-
-      return products
-        .filter((product) => {
-          const title =
-            String(
-              product.title || ''
-            ).toLowerCase();
-
-          const version =
-            String(
-              product.version_name || ''
-            ).toLowerCase();
-
-          const album =
-            String(
-              product.album_name || ''
-            ).toLowerCase();
-
-          return (
-            title.includes(keyword) ||
-            version.includes(keyword) ||
-            album.includes(keyword)
-          );
-        })
-        .slice(0, 20);
-    }, [
-      products,
-      productSearch
-    ]);
-
-  // =========================================================
-  // SELECT PRODUCT
-  // =========================================================
-
-  const handleSelectProduct = (
-    product
-  ) => {
-    setSelectedProduct(product);
-
-    setSelectedPrice(
-      product.price || ''
-    );
-
-    setSelectedQuantity(1);
-  };
-
-  // =========================================================
+  // ==========================================================
   // CREATE ORDER
-  // =========================================================
+  // ==========================================================
 
   const handleCreateOrder = async (
-    e
+    event
   ) => {
-    e.preventDefault();
+
+    event.preventDefault();
+
+
+    // ========================================================
+    // VALIDATE CUSTOMER
+    // ========================================================
 
     if (
       !orderForm.customer_name.trim()
     ) {
+
       alert(
         'Vui lòng nhập tên khách hàng!'
       );
+
       return;
     }
+
 
     if (
       !orderForm.phone.trim()
     ) {
+
       alert(
         'Vui lòng nhập số điện thoại!'
       );
+
       return;
     }
+
+
+    // ========================================================
+    // VALIDATE PRODUCTS
+    // ========================================================
 
     if (
       orderForm.items.length === 0
     ) {
+
       alert(
         'Đơn hàng phải có ít nhất 1 sản phẩm!'
       );
+
       return;
     }
 
+
+    // ========================================================
+    // VALIDATE ITEMS
+    // ========================================================
+
+    for (
+      const item
+      of orderForm.items
+    ) {
+
+      const quantity =
+        Number(item.quantity);
+
+      const price =
+        Number(item.price);
+
+
+      if (
+        !Number.isInteger(quantity) ||
+        quantity <= 0
+      ) {
+
+        alert(
+          'Có sản phẩm có số lượng không hợp lệ!'
+        );
+
+        return;
+      }
+
+
+      if (
+        !Number.isFinite(price) ||
+        price < 0
+      ) {
+
+        alert(
+          'Có sản phẩm có giá bán không hợp lệ!'
+        );
+
+        return;
+      }
+    }
+
+
     try {
+
       setCreating(true);
 
+
       const payload = {
+
         user_id:
-          orderForm.user_id || null,
+          orderForm.user_id ||
+          null,
 
         customer_name:
           orderForm.customer_name.trim(),
@@ -678,32 +1303,72 @@ export default function AdminOrders() {
           orderForm.items.map(
             (item) => ({
               product_id:
-                item.product_id,
+                Number(
+                  item.product_id
+                ),
 
               quantity:
-                Number(item.quantity),
+                Number(
+                  item.quantity
+                ),
 
               price:
-                Number(item.price)
+                Number(
+                  item.price
+                )
             })
           )
       };
 
-      const res = await axios.post(
-        `${API_URL}/orders`,
-        payload
-      );
+
+      const res =
+        await axios.post(
+          `${API_URL}/orders`,
+          payload
+        );
+
+
+      const createdOrder =
+        res.data?.order;
+
 
       alert(
         res.data?.message ||
         'Tạo đơn hàng thành công!'
       );
 
+
       setShowCreateModal(false);
+
       resetCreateForm();
 
+
       await fetchOrders();
+
+
+      // Nếu backend trả order
+      // thì hỏi in bill
+
+      if (
+        createdOrder?.id
+      ) {
+
+        const shouldPrint =
+          window.confirm(
+            'Đã tạo đơn hàng. Bạn có muốn in bill ngay không?'
+          );
+
+        if (shouldPrint) {
+
+          await handlePrintOrder(
+            createdOrder.id
+          );
+        }
+
+      }
+
     } catch (error) {
+
       console.error(
         'Lỗi tạo đơn hàng:',
         error
@@ -713,31 +1378,44 @@ export default function AdminOrders() {
         error.response?.data?.message ||
         'Không thể tạo đơn hàng!'
       );
+
     } finally {
+
       setCreating(false);
     }
   };
 
-  // =========================================================
+
+  // ==========================================================
   // VIEW ORDER DETAIL
-  // =========================================================
+  // ==========================================================
 
   const handleViewOrder = async (
     orderId
   ) => {
+
     try {
+
       setLoadingDetail(true);
-      setShowDetailModal(true);
+
       setSelectedOrder(null);
 
-      const res = await axios.get(
-        `${API_URL}/orders/${orderId}`
-      );
+      setShowDetailModal(true);
+
+
+      const res =
+        await axios.get(
+          `${API_URL}/orders/${orderId}`
+        );
+
 
       setSelectedOrder(
-        res.data?.order || null
+        res.data?.order ||
+        null
       );
+
     } catch (error) {
+
       console.error(
         'Lỗi lấy chi tiết đơn:',
         error
@@ -749,25 +1427,32 @@ export default function AdminOrders() {
       );
 
       setShowDetailModal(false);
+
     } finally {
+
       setLoadingDetail(false);
     }
   };
 
-  // =========================================================
+
+  // ==========================================================
   // UPDATE STATUS
-  // =========================================================
+  // ==========================================================
 
   const handleUpdateStatus = async (
     orderId,
     status
   ) => {
+
     if (!status) {
       return;
     }
 
+
     try {
+
       setUpdatingStatus(true);
+
 
       const res =
         await axios.put(
@@ -777,24 +1462,35 @@ export default function AdminOrders() {
           }
         );
 
+
       alert(
         res.data?.message ||
         'Cập nhật trạng thái thành công!'
       );
 
+
       await fetchOrders();
+
+
+      // Update detail hiện tại
 
       if (
         selectedOrder &&
-        Number(selectedOrder.id) ===
-          Number(orderId)
+        Number(
+          selectedOrder.id
+        ) === Number(orderId)
       ) {
-        setSelectedOrder({
-          ...selectedOrder,
-          status
-        });
+
+        setSelectedOrder(
+          (prev) => ({
+            ...prev,
+            status
+          })
+        );
       }
+
     } catch (error) {
+
       console.error(
         'Lỗi cập nhật trạng thái:',
         error
@@ -804,53 +1500,68 @@ export default function AdminOrders() {
         error.response?.data?.message ||
         'Không thể cập nhật trạng thái!'
       );
+
     } finally {
+
       setUpdatingStatus(false);
     }
   };
 
-  // =========================================================
-  // PRINT BILL
-  // =========================================================
 
-  const handlePrintBill = (
+  // ==========================================================
+  // PRINT ORDER
+  // ==========================================================
+
+  const handlePrintOrder = async (
+    orderId
+  ) => {
+
+    try {
+
+      const res =
+        await axios.get(
+          `${API_URL}/orders/${orderId}`
+        );
+
+
+      const order =
+        res.data?.order;
+
+
+      if (!order) {
+
+        alert(
+          'Không tìm thấy đơn hàng!'
+        );
+
+        return;
+      }
+
+
+      printBill(order);
+
+    } catch (error) {
+
+      console.error(
+        'Lỗi lấy đơn để in:',
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+        'Không thể in hóa đơn!'
+      );
+    }
+  };
+
+
+  // ==========================================================
+  // PRINT BILL
+  // ==========================================================
+
+  const printBill = (
     order
   ) => {
-    if (!order) {
-      return;
-    }
-
-    const items =
-      order.items || [];
-
-    const rows = items
-      .map(
-        (item) => `
-          <tr>
-            <td>
-              ${item.title || '--'}
-              ${
-                item.version_name
-                  ? `<br><small>${item.version_name}</small>`
-                  : ''
-              }
-            </td>
-            <td style="text-align:center">
-              ${item.quantity || 0}
-            </td>
-            <td style="text-align:right">
-              ${formatMoney(item.price)}
-            </td>
-            <td style="text-align:right">
-              ${formatMoney(
-                Number(item.price || 0) *
-                  Number(item.quantity || 0)
-              )}
-            </td>
-          </tr>
-        `
-      )
-      .join('');
 
     const printWindow =
       window.open(
@@ -859,17 +1570,104 @@ export default function AdminOrders() {
         'width=900,height=700'
       );
 
+
     if (!printWindow) {
+
       alert(
-        'Trình duyệt đã chặn cửa sổ in!'
+        'Trình duyệt đang chặn cửa sổ in. Hãy cho phép popup.'
       );
+
       return;
     }
 
-    printWindow.document.write(`
+
+    const items =
+      Array.isArray(
+        order.items
+      )
+        ? order.items
+        : [];
+
+
+    const rows =
+      items
+        .map(
+          (item) => {
+
+            const itemTotal =
+              Number(
+                item.price || 0
+              ) *
+              Number(
+                item.quantity || 0
+              );
+
+
+            const productName =
+              item.product_title ||
+              item.title ||
+              'Sản phẩm';
+
+
+            const version =
+              item.version_name
+                ? ` - ${item.version_name}`
+                : '';
+
+
+            return `
+              <tr>
+                <td>
+                  <div class="product-name">
+                    ${escapeHtml(
+                      productName
+                    )}
+                  </div>
+
+                  ${
+                    version
+                      ? `
+                        <div class="version">
+                          ${escapeHtml(
+                            version
+                          )}
+                        </div>
+                      `
+                      : ''
+                  }
+                </td>
+
+                <td class="center">
+                  ${Number(
+                    item.quantity || 0
+                  )}
+                </td>
+
+                <td class="right">
+                  ${formatMoney(
+                    item.price
+                  )}
+                </td>
+
+                <td class="right">
+                  ${formatMoney(
+                    itemTotal
+                  )}
+                </td>
+              </tr>
+            `;
+          }
+        )
+        .join('');
+
+
+    const html = `
       <!DOCTYPE html>
+
       <html>
+
       <head>
+
         <meta charset="UTF-8" />
 
         <title>
@@ -877,17 +1675,20 @@ export default function AdminOrders() {
         </title>
 
         <style>
+
           * {
             box-sizing: border-box;
           }
 
           body {
+            margin: 0;
+            padding: 32px;
             font-family:
               Arial,
+              Helvetica,
               sans-serif;
-
-            padding: 32px;
             color: #111827;
+            background: white;
           }
 
           .bill {
@@ -897,28 +1698,36 @@ export default function AdminOrders() {
 
           .header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
           }
 
           .header h1 {
-            margin: 0 0 8px;
-            font-size: 24px;
+            margin: 0;
+            font-size: 26px;
+            font-weight: 800;
+          }
+
+          .header h2 {
+            margin: 8px 0;
+            font-size: 18px;
           }
 
           .header p {
-            margin: 4px 0;
+            margin: 5px 0;
             color: #6b7280;
+            font-size: 13px;
           }
 
           .customer {
             border: 1px solid #e5e7eb;
+            border-radius: 10px;
             padding: 16px;
-            border-radius: 8px;
             margin-bottom: 24px;
           }
 
           .customer p {
             margin: 7px 0;
+            font-size: 14px;
           }
 
           table {
@@ -928,45 +1737,84 @@ export default function AdminOrders() {
 
           th,
           td {
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom:
+              1px solid #e5e7eb;
             padding: 12px 8px;
-            font-size: 14px;
+            font-size: 13px;
           }
 
           th {
-            text-align: left;
             background: #f8fafc;
+            font-weight: 700;
+            text-align: left;
+          }
+
+          .center {
+            text-align: center;
+          }
+
+          .right {
+            text-align: right;
+          }
+
+          .product-name {
+            font-weight: 700;
+          }
+
+          .version {
+            margin-top: 3px;
+            color: #6b7280;
+            font-size: 11px;
           }
 
           .total {
             margin-top: 20px;
-            text-align: right;
+            padding-top: 16px;
+            border-top:
+              2px solid #111827;
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
             font-size: 20px;
-            font-weight: bold;
+            font-weight: 800;
           }
 
           .footer {
-            margin-top: 40px;
+            margin-top: 42px;
             text-align: center;
             color: #6b7280;
-            font-size: 13px;
+            font-size: 12px;
           }
 
           @media print {
+
             body {
               padding: 0;
             }
+
+            .bill {
+              max-width: none;
+            }
+
           }
+
         </style>
+
       </head>
 
       <body>
+
         <div class="bill">
 
           <div class="header">
-            <h1>CHIP CHIP HOUSE</h1>
 
-            <p>HÓA ĐƠN BÁN HÀNG</p>
+            <h1>
+              CHIP CHIP HOUSE
+            </h1>
+
+            <h2>
+              HÓA ĐƠN BÁN HÀNG
+            </h2>
 
             <p>
               Mã đơn: #${order.id}
@@ -977,7 +1825,9 @@ export default function AdminOrders() {
                 order.created_at
               )}
             </p>
+
           </div>
+
 
           <div class="customer">
 
@@ -986,11 +1836,11 @@ export default function AdminOrders() {
                 Khách hàng:
               </strong>
 
-              ${
+              ${escapeHtml(
                 order.customer_name ||
                 order.user_name ||
                 '--'
-              }
+              )}
             </p>
 
             <p>
@@ -998,7 +1848,10 @@ export default function AdminOrders() {
                 SĐT:
               </strong>
 
-              ${order.phone || '--'}
+              ${escapeHtml(
+                order.phone ||
+                '--'
+              )}
             </p>
 
             <p>
@@ -1006,489 +1859,1123 @@ export default function AdminOrders() {
                 Địa chỉ:
               </strong>
 
-              ${order.address || '--'}
+              ${escapeHtml(
+                order.address ||
+                '--'
+              )}
             </p>
 
           </div>
+
 
           <table>
 
             <thead>
+
               <tr>
+
                 <th>
                   Sản phẩm
                 </th>
 
-                <th style="text-align:center">
+                <th
+                  style="
+                    text-align:center;
+                    width:70px;
+                  "
+                >
                   SL
                 </th>
 
-                <th style="text-align:right">
+                <th
+                  style="
+                    text-align:right;
+                    width:120px;
+                  "
+                >
                   Đơn giá
                 </th>
 
-                <th style="text-align:right">
+                <th
+                  style="
+                    text-align:right;
+                    width:140px;
+                  "
+                >
                   Thành tiền
                 </th>
+
               </tr>
+
             </thead>
 
+
             <tbody>
+
               ${rows}
+
             </tbody>
 
           </table>
 
+
           <div class="total">
-            Tổng cộng:
-            ${formatMoney(
-              order.total_amount
-            )}
+
+            <span>
+              TỔNG CỘNG
+            </span>
+
+            <span>
+              ${formatMoney(
+                order.total_amount
+              )}
+            </span>
+
           </div>
 
+
           <div class="footer">
-            Cảm ơn quý khách đã mua hàng!
+
+            Cảm ơn quý khách đã mua hàng
+            tại CHIP CHIP HOUSE 💗
+
           </div>
 
         </div>
 
+
         <script>
-          window.onload = function() {
+
+          window.onload = function () {
+
             window.print();
+
           };
+
         </script>
 
       </body>
+
       </html>
-    `);
+    `;
+
+
+    printWindow.document.open();
+
+    printWindow.document.write(
+      html
+    );
 
     printWindow.document.close();
   };
 
-  // =========================================================
-  // LOADING
-  // =========================================================
 
-  if (loadingOrders) {
-    return (
-      <div className="min-h-screen bg-slate-100 flex">
-        <AdminSidebar
-          isOpen={sidebarOpen}
-          setIsOpen={setSidebarOpen}
-        />
+  // ==========================================================
+  // ESCAPE HTML
+  // ==========================================================
 
-        <main className="flex-1 lg:ml-64 flex items-center justify-center p-6">
-          <div className="text-center">
-            <Loader2 className="w-9 h-9 animate-spin text-sky-500 mx-auto mb-3" />
+  const escapeHtml = (
+    value
+  ) => {
 
-            <p className="text-sm text-slate-500">
-              Đang tải đơn hàng...
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
+    return String(
+      value ?? ''
+    )
+      .replace(
+        /&/g,
+        '&amp;'
+      )
+      .replace(
+        /</g,
+        '&lt;'
+      )
+      .replace(
+        />/g,
+        '&gt;'
+      )
+      .replace(
+        /"/g,
+        '&quot;'
+      )
+      .replace(
+        /'/g,
+        '&#039;'
+      );
+  };
 
-  // =========================================================
-  // MAIN
-  // =========================================================
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+
+    <div
+      className="
+        min-h-screen
+        bg-slate-50
+        flex
+      "
+    >
+
+      {/* ======================================================
+          SIDEBAR
+      ====================================================== */}
 
       <AdminSidebar
-        isOpen={sidebarOpen}
-        setIsOpen={setSidebarOpen}
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
       />
 
-      <main className="flex-1 lg:ml-64 min-w-0">
 
-        {/* =================================================
-            HEADER
-        ================================================= */}
+      {/* ======================================================
+          MAIN
+      ====================================================== */}
 
-        <header className="bg-white border-b border-slate-200">
+      <main
+        className="
+          flex-1
+          min-w-0
+          lg:ml-64
+        "
+      >
 
-          <div className="px-4 sm:px-6 lg:px-8 py-4">
+        {/* ====================================================
+            TOP BAR
+        ==================================================== */}
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div
+          className="
+            sticky
+            top-0
+            z-20
+            bg-white/95
+            backdrop-blur
+            border-b
+            border-slate-200
+          "
+        >
 
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-                  Quản lý đơn hàng
-                </h1>
+          <div
+            className="
+              px-4
+              sm:px-6
+              lg:px-8
+              py-4
+              flex
+              items-center
+              justify-between
+              gap-4
+            "
+          >
 
-                <p className="text-sm text-slate-500 mt-1">
-                  Tạo, quản lý và in hóa đơn bán hàng
-                </p>
-              </div>
+            <div>
 
-              <div className="flex gap-2">
+              <h1
+                className="
+                  text-xl
+                  sm:text-2xl
+                  font-black
+                  text-slate-900
+                "
+              >
+                Quản lý đơn hàng
+              </h1>
 
-                <button
-                  type="button"
-                  onClick={fetchOrders}
-                  className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-slate-500 hover:bg-slate-50"
-                  title="Làm mới"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={openCreateModal}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-500 text-white text-sm font-bold hover:bg-sky-600 transition"
-                >
-                  <Plus className="w-4 h-4" />
-
-                  Tạo đơn hàng
-                </button>
-
-              </div>
+              <p
+                className="
+                  text-xs
+                  sm:text-sm
+                  text-slate-500
+                  mt-1
+                "
+              >
+                Quản lý đơn hàng và hóa đơn
+              </p>
 
             </div>
+
+
+            <button
+              type="button"
+              onClick={
+                openCreateModal
+              }
+              className="
+                inline-flex
+                items-center
+                justify-center
+                gap-2
+                px-4
+                py-2.5
+                rounded-xl
+                bg-sky-500
+                text-white
+                font-bold
+                text-sm
+                shadow-sm
+                hover:bg-sky-600
+                active:scale-[0.98]
+                transition
+                whitespace-nowrap
+              "
+            >
+
+              <Plus
+                className="
+                  w-4
+                  h-4
+                "
+              />
+
+              <span
+                className="
+                  hidden
+                  sm:inline
+                "
+              >
+                Tạo đơn hàng
+              </span>
+
+              <span
+                className="
+                  sm:hidden
+                "
+              >
+                Tạo đơn
+              </span>
+
+            </button>
 
           </div>
 
-        </header>
+        </div>
 
-        {/* =================================================
+
+        {/* ====================================================
             CONTENT
-        ================================================= */}
+        ==================================================== */}
 
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div
+          className="
+            p-4
+            sm:p-6
+            lg:p-8
+            space-y-5
+          "
+        >
 
-          {/* ERROR */}
+          {/* ==================================================
+              ERROR
+          ================================================== */}
 
           {orderError && (
-            <div className="mb-5 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3 text-red-600">
 
-              <AlertCircle className="w-5 h-5 shrink-0" />
+            <div
+              className="
+                rounded-xl
+                border
+                border-red-200
+                bg-red-50
+                text-red-700
+                px-4
+                py-3
+                flex
+                items-center
+                justify-between
+                gap-3
+                text-sm
+              "
+            >
 
-              <span className="text-sm">
-                {orderError}
-              </span>
+              <div
+                className="
+                  flex
+                  items-center
+                  gap-2
+                "
+              >
+
+                <AlertCircle
+                  className="
+                    w-5
+                    h-5
+                    flex-shrink-0
+                  "
+                />
+
+                <span>
+                  {orderError}
+                </span>
+
+              </div>
+
+
+              <button
+                type="button"
+                onClick={
+                  fetchOrders
+                }
+                className="
+                  inline-flex
+                  items-center
+                  gap-1.5
+                  font-bold
+                  hover:underline
+                "
+              >
+
+                <RefreshCw
+                  className="
+                    w-4
+                    h-4
+                  "
+                />
+
+                Thử lại
+
+              </button>
 
             </div>
+
           )}
 
-          {/* FILTER */}
 
-          <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-5">
+          {/* ==================================================
+              FILTER BAR
+          ================================================== */}
 
-            <div className="flex flex-col lg:flex-row gap-3">
+          <div
+            className="
+              bg-white
+              border
+              border-slate-200
+              rounded-2xl
+              p-4
+              shadow-sm
+            "
+          >
+
+            <div
+              className="
+                flex
+                flex-col
+                sm:flex-row
+                gap-3
+              "
+            >
 
               {/* SEARCH */}
 
-              <div className="relative flex-1">
+              <div
+                className="
+                  relative
+                  flex-1
+                "
+              >
 
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search
+                  className="
+                    absolute
+                    left-3
+                    top-1/2
+                    -translate-y-1/2
+                    w-4
+                    h-4
+                    text-slate-400
+                  "
+                />
 
                 <input
                   type="text"
                   value={search}
-                  onChange={(e) =>
-                    setSearch(
-                      e.target.value
-                    )
+                  onChange={
+                    (event) =>
+                      setSearch(
+                        event.target.value
+                      )
                   }
-                  placeholder="Tìm theo mã đơn, tên khách hàng, SĐT..."
-                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 text-sm"
+                  placeholder="
+                    Tìm mã đơn, tên khách hoặc SĐT...
+                  "
+                  className="
+                    w-full
+                    h-11
+                    pl-10
+                    pr-4
+                    rounded-xl
+                    border
+                    border-slate-200
+                    bg-white
+                    outline-none
+                    text-sm
+                    focus:border-sky-400
+                    focus:ring-4
+                    focus:ring-sky-100
+                  "
                 />
 
               </div>
 
+
               {/* STATUS */}
 
-              <div className="relative">
+              <div
+                className="
+                  relative
+                  sm:w-56
+                "
+              >
 
                 <select
                   value={statusFilter}
-                  onChange={(e) =>
-                    setStatusFilter(
-                      e.target.value
-                    )
+                  onChange={
+                    (event) =>
+                      setStatusFilter(
+                        event.target.value
+                      )
                   }
-                  className="w-full lg:w-52 h-11 appearance-none pl-4 pr-10 rounded-xl border border-slate-200 bg-white outline-none focus:border-sky-400 text-sm"
+                  className="
+                    appearance-none
+                    w-full
+                    h-11
+                    px-4
+                    pr-10
+                    rounded-xl
+                    border
+                    border-slate-200
+                    bg-white
+                    outline-none
+                    text-sm
+                    font-medium
+                    focus:border-sky-400
+                    focus:ring-4
+                    focus:ring-sky-100
+                  "
                 >
+
+                  <option value="">
+                    Tất cả trạng thái
+                  </option>
 
                   {statuses.map(
                     (status) => (
+
                       <option
-                        key={status.value}
+                        key={
+                          status.value
+                        }
                         value={
                           status.value
                         }
                       >
                         {status.label}
                       </option>
+
                     )
                   )}
 
                 </select>
 
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+
+                <ChevronDown
+                  className="
+                    absolute
+                    right-3
+                    top-1/2
+                    -translate-y-1/2
+                    w-4
+                    h-4
+                    text-slate-400
+                    pointer-events-none
+                  "
+                />
+
+              </div>
+
+
+              {/* REFRESH */}
+
+              <button
+                type="button"
+                onClick={
+                  fetchOrders
+                }
+                disabled={
+                  loadingOrders
+                }
+                className="
+                  h-11
+                  px-4
+                  rounded-xl
+                  border
+                  border-slate-200
+                  bg-white
+                  text-slate-700
+                  font-bold
+                  text-sm
+                  inline-flex
+                  items-center
+                  justify-center
+                  gap-2
+                  hover:bg-slate-50
+                  disabled:opacity-50
+                "
+              >
+
+                <RefreshCw
+                  className={`
+                    w-4
+                    h-4
+                    ${
+                      loadingOrders
+                        ? 'animate-spin'
+                        : ''
+                    }
+                  `}
+                />
+
+                <span
+                  className="
+                    hidden
+                    sm:inline
+                  "
+                >
+                  Làm mới
+                </span>
+
+              </button>
+
+            </div>
+
+          </div>
+
+
+          {/* ==================================================
+              ORDERS TABLE
+          ================================================== */}
+
+          <div
+            className="
+              bg-white
+              border
+              border-slate-200
+              rounded-2xl
+              shadow-sm
+              overflow-hidden
+            "
+          >
+
+            {/* TABLE HEADER */}
+
+            <div
+              className="
+                px-5
+                py-4
+                border-b
+                border-slate-100
+                flex
+                items-center
+                justify-between
+              "
+            >
+
+              <div>
+
+                <h2
+                  className="
+                    font-black
+                    text-slate-900
+                  "
+                >
+                  Danh sách đơn hàng
+                </h2>
+
+                <p
+                  className="
+                    text-xs
+                    text-slate-500
+                    mt-1
+                  "
+                >
+                  {filteredOrders.length}
+                  {' '}
+                  đơn hàng
+                </p>
 
               </div>
 
             </div>
 
-          </div>
 
-          {/* =================================================
-              TABLE DESKTOP
-          ================================================= */}
+            {/* LOADING */}
 
-          <div className="hidden md:block bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            {loadingOrders ? (
 
-            <div className="overflow-x-auto">
+              <div
+                className="
+                  py-20
+                  flex
+                  flex-col
+                  items-center
+                  justify-center
+                  text-slate-500
+                "
+              >
 
-              <table className="w-full min-w-[850px]">
+                <Loader2
+                  className="
+                    w-8
+                    h-8
+                    animate-spin
+                    mb-3
+                  "
+                />
 
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
+                <p className="text-sm">
+                  Đang tải đơn hàng...
+                </p>
 
-                    <th className="text-left px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Đơn hàng
-                    </th>
+              </div>
 
-                    <th className="text-left px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Khách hàng
-                    </th>
+            ) : filteredOrders.length === 0 ? (
 
-                    <th className="text-left px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Tổng tiền
-                    </th>
+              <div
+                className="
+                  py-20
+                  text-center
+                  text-slate-500
+                "
+              >
 
-                    <th className="text-left px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Trạng thái
-                    </th>
+                <ShoppingCart
+                  className="
+                    w-10
+                    h-10
+                    mx-auto
+                    mb-3
+                    text-slate-300
+                  "
+                />
 
-                    <th className="text-left px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Ngày tạo
-                    </th>
+                <p
+                  className="
+                    font-bold
+                    text-slate-700
+                  "
+                >
+                  Không có đơn hàng
+                </p>
 
-                    <th className="text-right px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-500">
-                      Thao tác
-                    </th>
+                <p
+                  className="
+                    text-sm
+                    mt-1
+                  "
+                >
+                  Chưa tìm thấy đơn hàng phù hợp.
+                </p>
 
-                  </tr>
-                </thead>
+              </div>
 
-                <tbody className="divide-y divide-slate-100">
+            ) : (
 
-                  {filteredOrders.map(
-                    (order) => (
-                      <tr
-                        key={order.id}
-                        className="hover:bg-slate-50 transition"
-                      >
+              <div
+                className="
+                  overflow-x-auto
+                "
+              >
 
-                        <td className="px-5 py-4">
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleViewOrder(
-                                order.id
-                              )
-                            }
-                            className="font-bold text-sky-600 hover:text-sky-700"
-                          >
-                            #{order.id}
-                          </button>
-
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <p className="font-semibold text-slate-900">
-                            {
-                              order.customer_name ||
-                              order.user_name ||
-                              '--'
-                            }
-                          </p>
-
-                          <p className="text-xs text-slate-500 mt-1">
-                            {order.phone || '--'}
-                          </p>
-
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <span className="font-bold text-slate-900">
-                            {formatMoney(
-                              order.total_amount
-                            )}
-                          </span>
-
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <span
-                            className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold ${getStatusClass(
-                              order.status
-                            )}`}
-                          >
-                            {getStatusLabel(
-                              order.status
-                            )}
-                          </span>
-
-                        </td>
-
-                        <td className="px-5 py-4 text-sm text-slate-500">
-                          {formatDate(
-                            order.created_at
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4">
-
-                          <div className="flex justify-end gap-2">
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleViewOrder(
-                                  order.id
-                                )
-                              }
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:bg-sky-50 hover:text-sky-600"
-                              title="Xem đơn"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await handleViewOrder(
-                                  order.id
-                                );
-                              }}
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-100"
-                              title="In bill"
-                            >
-                              <Printer className="w-4 h-4" />
-                            </button>
-
-                          </div>
-
-                        </td>
-
-                      </tr>
-                    )
-                  )}
-
-                </tbody>
-
-              </table>
-
-            </div>
-
-            {filteredOrders.length === 0 && (
-              <EmptyOrders />
-            )}
-
-          </div>
-
-          {/* =================================================
-              MOBILE CARDS
-          ================================================= */}
-
-          <div className="md:hidden space-y-3">
-
-            {filteredOrders.map(
-              (order) => (
-                <div
-                  key={order.id}
-                  className="bg-white border border-slate-200 rounded-2xl p-4"
+                <table
+                  className="
+                    w-full
+                    min-w-[850px]
+                    text-left
+                  "
                 >
 
-                  <div className="flex items-start justify-between gap-3">
+                  <thead>
 
-                    <div>
+                    <tr
+                      className="
+                        bg-slate-50
+                        border-b
+                        border-slate-100
+                        text-xs
+                        uppercase
+                        tracking-wider
+                        text-slate-500
+                      "
+                    >
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleViewOrder(
-                            order.id
-                          )
-                        }
-                        className="font-black text-sky-600"
+                      <th
+                        className="
+                          px-5
+                          py-3.5
+                          font-bold
+                        "
                       >
-                        #{order.id}
-                      </button>
+                        Mã đơn
+                      </th>
 
-                      <p className="font-bold text-slate-900 mt-1">
-                        {
-                          order.customer_name ||
-                          order.user_name ||
-                          '--'
-                        }
-                      </p>
+                      <th
+                        className="
+                          px-5
+                          py-3.5
+                          font-bold
+                        "
+                      >
+                        Khách hàng
+                      </th>
 
-                      <p className="text-xs text-slate-500 mt-1">
-                        {order.phone || '--'}
-                      </p>
-
-                    </div>
-
-                    <span
-                      className={`shrink-0 inline-flex px-2.5 py-1 rounded-lg text-[11px] font-bold ${getStatusClass(
-                        order.status
-                      )}`}
-                    >
-                      {getStatusLabel(
-                        order.status
-                      )}
-                    </span>
-
-                  </div>
-
-                  <div className="border-t border-slate-100 mt-4 pt-4 flex items-center justify-between">
-
-                    <div>
-
-                      <p className="text-xs text-slate-400">
+                      <th
+                        className="
+                          px-5
+                          py-3.5
+                          font-bold
+                        "
+                      >
                         Tổng tiền
-                      </p>
+                      </th>
 
-                      <p className="font-black text-slate-900 mt-1">
-                        {formatMoney(
-                          order.total_amount
-                        )}
-                      </p>
+                      <th
+                        className="
+                          px-5
+                          py-3.5
+                          font-bold
+                        "
+                      >
+                        Trạng thái
+                      </th>
 
-                    </div>
+                      <th
+                        className="
+                          px-5
+                          py-3.5
+                          font-bold
+                        "
+                      >
+                        Ngày tạo
+                      </th>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleViewOrder(
-                          order.id
-                        )
-                      }
-                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Xem
-                    </button>
+                      <th
+                        className="
+                          px-5
+                          py-3.5
+                          font-bold
+                          text-right
+                        "
+                      >
+                        Thao tác
+                      </th>
 
-                  </div>
+                    </tr>
 
-                </div>
-              )
-            )}
+                  </thead>
 
-            {filteredOrders.length === 0 && (
-              <EmptyOrders />
+
+                  <tbody
+                    className="
+                      divide-y
+                      divide-slate-100
+                    "
+                  >
+
+                    {filteredOrders.map(
+                      (order) => (
+
+                        <tr
+                          key={
+                            order.id
+                          }
+                          className="
+                            hover:bg-slate-50
+                            transition
+                          "
+                        >
+
+                          {/* ORDER ID */}
+
+                          <td
+                            className="
+                              px-5
+                              py-4
+                            "
+                          >
+
+                            <span
+                              className="
+                                font-black
+                                text-sky-600
+                              "
+                            >
+                              #
+                              {order.id}
+                            </span>
+
+                          </td>
+
+
+                          {/* CUSTOMER */}
+
+                          <td
+                            className="
+                              px-5
+                              py-4
+                            "
+                          >
+
+                            <div
+                              className="
+                                flex
+                                items-center
+                                gap-3
+                              "
+                            >
+
+                              <div
+                                className="
+                                  w-9
+                                  h-9
+                                  rounded-full
+                                  bg-sky-50
+                                  text-sky-600
+                                  flex
+                                  items-center
+                                  justify-center
+                                  flex-shrink-0
+                                "
+                              >
+
+                                <User
+                                  className="
+                                    w-4
+                                    h-4
+                                  "
+                                />
+
+                              </div>
+
+
+                              <div
+                                className="
+                                  min-w-0
+                                "
+                              >
+
+                                <p
+                                  className="
+                                    font-bold
+                                    text-slate-800
+                                    truncate
+                                    max-w-[220px]
+                                  "
+                                >
+                                  {order.customer_name ||
+                                    order.user_name ||
+                                    'Khách hàng'}
+                                </p>
+
+                                <p
+                                  className="
+                                    text-xs
+                                    text-slate-500
+                                    mt-0.5
+                                  "
+                                >
+                                  {order.phone ||
+                                    '--'}
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+
+                          {/* TOTAL */}
+
+                          <td
+                            className="
+                              px-5
+                              py-4
+                            "
+                          >
+
+                            <span
+                              className="
+                                font-black
+                                text-slate-900
+                              "
+                            >
+                              {formatMoney(
+                                order.total_amount
+                              )}
+                            </span>
+
+                          </td>
+
+
+                          {/* STATUS */}
+
+                          <td
+                            className="
+                              px-5
+                              py-4
+                            "
+                          >
+
+                            <span
+                              className={`
+                                inline-flex
+                                items-center
+                                gap-1.5
+                                px-2.5
+                                py-1.5
+                                rounded-full
+                                border
+                                text-xs
+                                font-bold
+                                ${getStatusClass(
+                                  order.status
+                                )}
+                              `}
+                            >
+
+                              <StatusIcon
+                                status={
+                                  order.status
+                                }
+                              />
+
+                              {getStatusLabel(
+                                order.status
+                              )}
+
+                            </span>
+
+                          </td>
+
+
+                          {/* DATE */}
+
+                          <td
+                            className="
+                              px-5
+                              py-4
+                              text-sm
+                              text-slate-500
+                            "
+                          >
+
+                            {formatDate(
+                              order.created_at
+                            )}
+
+                          </td>
+
+
+                          {/* ACTION */}
+
+                          <td
+                            className="
+                              px-5
+                              py-4
+                            "
+                          >
+
+                            <div
+                              className="
+                                flex
+                                justify-end
+                                gap-2
+                              "
+                            >
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleViewOrder(
+                                    order.id
+                                  )
+                                }
+                                className="
+                                  w-9
+                                  h-9
+                                  rounded-lg
+                                  border
+                                  border-slate-200
+                                  text-slate-600
+                                  hover:bg-sky-50
+                                  hover:text-sky-600
+                                  hover:border-sky-200
+                                  flex
+                                  items-center
+                                  justify-center
+                                  transition
+                                "
+                                title="Xem chi tiết"
+                              >
+
+                                <Eye
+                                  className="
+                                    w-4
+                                    h-4
+                                  "
+                                />
+
+                              </button>
+
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handlePrintOrder(
+                                    order.id
+                                  )
+                                }
+                                className="
+                                  w-9
+                                  h-9
+                                  rounded-lg
+                                  border
+                                  border-slate-200
+                                  text-slate-600
+                                  hover:bg-slate-50
+                                  hover:text-slate-900
+                                  flex
+                                  items-center
+                                  justify-center
+                                  transition
+                                "
+                                title="In bill"
+                              >
+
+                                <Printer
+                                  className="
+                                    w-4
+                                    h-4
+                                  "
+                                />
+
+                              </button>
+
+                            </div>
+
+                          </td>
+
+                        </tr>
+
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
             )}
 
           </div>
@@ -1497,165 +2984,592 @@ export default function AdminOrders() {
 
       </main>
 
-      {/* =====================================================
+
+      {/* ======================================================
           CREATE ORDER MODAL
-      ===================================================== */}
+      ====================================================== */}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+
+        <div
+          className="
+            fixed
+            inset-0
+            z-50
+            bg-black/50
+            backdrop-blur-sm
+            p-3
+            sm:p-5
+            overflow-y-auto
+          "
+          onMouseDown={(event) => {
+
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              closeCreateModal();
+            }
+
+          }}
+        >
 
           <div
-            className="absolute inset-0 bg-black/40"
-            onClick={closeCreateModal}
-          />
+            className="
+              min-h-full
+              flex
+              items-center
+              justify-center
+            "
+          >
 
-          <div className="relative w-full max-w-5xl max-h-[95vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div
+              className="
+                w-full
+                max-w-5xl
+                bg-white
+                rounded-2xl
+                shadow-2xl
+                overflow-hidden
+              "
+            >
 
-            {/* HEADER */}
+              {/* MODAL HEADER */}
 
-            <div className="px-5 sm:px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
+              <div
+                className="
+                  px-5
+                  sm:px-6
+                  py-4
+                  border-b
+                  border-slate-100
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
 
-              <div>
+                <div>
 
-                <h2 className="text-lg sm:text-xl font-black text-slate-900">
-                  Tạo đơn hàng
-                </h2>
+                  <h2
+                    className="
+                      text-lg
+                      sm:text-xl
+                      font-black
+                      text-slate-900
+                    "
+                  >
+                    Tạo đơn hàng
+                  </h2>
 
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Tạo đơn bán hàng trực tiếp
-                </p>
+                  <p
+                    className="
+                      text-xs
+                      sm:text-sm
+                      text-slate-500
+                      mt-1
+                    "
+                  >
+                    Tạo bill bán hàng trực tiếp
+                  </p>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  onClick={
+                    closeCreateModal
+                  }
+                  className="
+                    w-9
+                    h-9
+                    rounded-xl
+                    hover:bg-slate-100
+                    flex
+                    items-center
+                    justify-center
+                    text-slate-500
+                  "
+                >
+
+                  <X
+                    className="
+                      w-5
+                      h-5
+                    "
+                  />
+
+                </button>
 
               </div>
 
-              <button
-                type="button"
-                onClick={closeCreateModal}
-                disabled={creating}
-                className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-slate-100 text-slate-500"
+
+              {/* MODAL BODY */}
+
+              <form
+                onSubmit={
+                  handleCreateOrder
+                }
               >
-                <X className="w-5 h-5" />
-              </button>
 
-            </div>
+                <div
+                  className="
+                    p-4
+                    sm:p-6
+                    grid
+                    grid-cols-1
+                    lg:grid-cols-[1fr_1.15fr]
+                    gap-5
+                  "
+                >
 
-            {/* BODY */}
+                  {/* =========================================
+                      LEFT
+                  ========================================= */}
 
-            <form
-              onSubmit={handleCreateOrder}
-              className="overflow-y-auto p-5 sm:p-6"
-            >
+                  <div
+                    className="
+                      space-y-5
+                    "
+                  >
 
-              <div className="grid lg:grid-cols-2 gap-6">
+                    {/* CUSTOMER */}
 
-                {/* =================================================
-                    LEFT
-                ================================================= */}
+                    <div>
 
-                <div className="space-y-5">
+                      <h3
+                        className="
+                          font-black
+                          text-slate-900
+                          mb-3
+                        "
+                      >
+                        Thông tin khách hàng
+                      </h3>
 
-                  {/* CUSTOMER */}
 
-                  <div>
+                      {/* CUSTOMER SEARCH */}
 
-                    <h3 className="font-black text-slate-900 mb-3">
-                      Thông tin khách hàng
-                    </h3>
+                      <div
+                        className="
+                          relative
+                        "
+                      >
 
-                    <div className="space-y-3">
-
-                      <div>
-
-                        <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                          Tên khách hàng *
+                        <label
+                          className="
+                            block
+                            text-xs
+                            font-bold
+                            text-slate-500
+                            mb-1.5
+                          "
+                        >
+                          Tìm khách hàng
                         </label>
 
-                        <div className="relative">
 
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <div
+                          className="
+                            relative
+                          "
+                        >
+
+                          <Search
+                            className="
+                              absolute
+                              left-3
+                              top-1/2
+                              -translate-y-1/2
+                              w-4
+                              h-4
+                              text-slate-400
+                            "
+                          />
 
                           <input
                             type="text"
                             value={
-                              orderForm.customer_name
+                              customerSearch
                             }
-                            onChange={(e) =>
-                              setOrderForm({
-                                ...orderForm,
-                                customer_name:
-                                  e.target.value
-                              })
+                            onChange={
+                              (event) =>
+                                handleCustomerSearch(
+                                  event.target.value
+                                )
                             }
-                            className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400"
-                            placeholder="Nguyễn Văn A"
+                            onFocus={() => {
+
+                              if (
+                                customerSearch.trim()
+                              ) {
+                                setShowCustomerList(
+                                  true
+                                );
+                              }
+
+                            }}
+                            placeholder="
+                              Nhập tên hoặc số điện thoại...
+                            "
+                            className="
+                              w-full
+                              h-11
+                              pl-10
+                              pr-4
+                              rounded-xl
+                              border
+                              border-slate-200
+                              outline-none
+                              text-sm
+                              focus:border-sky-400
+                              focus:ring-4
+                              focus:ring-sky-100
+                            "
                           />
 
                         </div>
 
+
+                        {/* CUSTOMER DROPDOWN */}
+
+                        {showCustomerList && (
+
+                          <div
+                            className="
+                              absolute
+                              z-40
+                              left-0
+                              right-0
+                              top-full
+                              mt-2
+                              bg-white
+                              border
+                              border-slate-200
+                              rounded-xl
+                              shadow-xl
+                              max-h-64
+                              overflow-y-auto
+                            "
+                          >
+
+                            {loadingCustomers ? (
+
+                              <div
+                                className="
+                                  p-4
+                                  flex
+                                  items-center
+                                  gap-2
+                                  text-sm
+                                  text-slate-500
+                                "
+                              >
+
+                                <Loader2
+                                  className="
+                                    w-4
+                                    h-4
+                                    animate-spin
+                                  "
+                                />
+
+                                Đang tải khách hàng...
+
+                              </div>
+
+                            ) : filteredCustomers.length > 0 ? (
+
+                              filteredCustomers.map(
+                                (customer) => (
+
+                                  <button
+                                    key={
+                                      customer.id
+                                    }
+                                    type="button"
+                                    onClick={() =>
+                                      handleSelectCustomer(
+                                        customer
+                                      )
+                                    }
+                                    className="
+                                      w-full
+                                      text-left
+                                      px-4
+                                      py-3
+                                      hover:bg-sky-50
+                                      border-b
+                                      border-slate-100
+                                      last:border-0
+                                    "
+                                  >
+
+                                    <p
+                                      className="
+                                        font-bold
+                                        text-slate-800
+                                      "
+                                    >
+                                      {customer.name ||
+                                        'Chưa có tên'}
+                                    </p>
+
+                                    <p
+                                      className="
+                                        text-sm
+                                        text-sky-600
+                                        mt-1
+                                      "
+                                    >
+                                      {customer.phone ||
+                                        'Chưa có SĐT'}
+                                    </p>
+
+                                    {customer.email && (
+
+                                      <p
+                                        className="
+                                          text-xs
+                                          text-slate-400
+                                          mt-0.5
+                                        "
+                                      >
+                                        {customer.email}
+                                      </p>
+
+                                    )}
+
+                                  </button>
+
+                                )
+                              )
+
+                            ) : (
+
+                              <div
+                                className="
+                                  p-4
+                                  text-sm
+                                  text-slate-500
+                                "
+                              >
+                                Không tìm thấy khách hàng.
+                              </div>
+
+                            )}
+
+                          </div>
+
+                        )}
+
                       </div>
 
-                      <div>
 
-                        <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                      {/* NAME */}
+
+                      <div className="mt-3">
+
+                        <label
+                          className="
+                            block
+                            text-xs
+                            font-bold
+                            text-slate-500
+                            mb-1.5
+                          "
+                        >
+                          Tên khách hàng *
+                        </label>
+
+                        <input
+                          type="text"
+                          value={
+                            orderForm.customer_name
+                          }
+                          onChange={
+                            (event) =>
+                              handleCustomerNameChange(
+                                event.target.value
+                              )
+                          }
+                          placeholder="
+                            Nguyễn Văn A
+                          "
+                          className="
+                            w-full
+                            h-11
+                            px-4
+                            rounded-xl
+                            border
+                            border-slate-200
+                            outline-none
+                            text-sm
+                            focus:border-sky-400
+                            focus:ring-4
+                            focus:ring-sky-100
+                          "
+                        />
+
+                      </div>
+
+
+                      {/* PHONE */}
+
+                      <div className="mt-3">
+
+                        <label
+                          className="
+                            block
+                            text-xs
+                            font-bold
+                            text-slate-500
+                            mb-1.5
+                          "
+                        >
                           Số điện thoại *
                         </label>
 
-                        <div className="relative">
+                        <div
+                          className="
+                            relative
+                          "
+                        >
 
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <Phone
+                            className="
+                              absolute
+                              left-3
+                              top-1/2
+                              -translate-y-1/2
+                              w-4
+                              h-4
+                              text-slate-400
+                            "
+                          />
 
                           <input
                             type="text"
                             value={
                               orderForm.phone
                             }
-                            onChange={(e) =>
-                              setOrderForm({
-                                ...orderForm,
-                                phone:
-                                  e.target.value
-                              })
+                            onChange={
+                              (event) =>
+                                handlePhoneChange(
+                                  event.target.value
+                                )
                             }
-                            className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400"
-                            placeholder="090..."
+                            placeholder="
+                              0912345678
+                            "
+                            className="
+                              w-full
+                              h-11
+                              pl-10
+                              pr-4
+                              rounded-xl
+                              border
+                              border-slate-200
+                              outline-none
+                              text-sm
+                              focus:border-sky-400
+                              focus:ring-4
+                              focus:ring-sky-100
+                            "
                           />
 
                         </div>
 
                       </div>
 
-                      <div>
 
-                        <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                      {/* ADDRESS */}
+
+                      <div className="mt-3">
+
+                        <label
+                          className="
+                            block
+                            text-xs
+                            font-bold
+                            text-slate-500
+                            mb-1.5
+                          "
+                        >
                           Địa chỉ
                         </label>
 
-                        <div className="relative">
+                        <div
+                          className="
+                            relative
+                          "
+                        >
 
-                          <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
+                          <MapPin
+                            className="
+                              absolute
+                              left-3
+                              top-3
+                              w-4
+                              h-4
+                              text-slate-400
+                            "
+                          />
 
                           <textarea
                             value={
                               orderForm.address
                             }
-                            onChange={(e) =>
-                              setOrderForm({
-                                ...orderForm,
-                                address:
-                                  e.target.value
-                              })
+                            onChange={
+                              (event) =>
+                                setOrderForm(
+                                  (prev) => ({
+                                    ...prev,
+                                    address:
+                                      event.target.value
+                                  })
+                                )
                             }
                             rows={3}
-                            className="w-full pl-10 pr-3 py-3 rounded-xl border border-slate-200 outline-none resize-none focus:border-sky-400"
-                            placeholder="Địa chỉ giao hàng..."
+                            placeholder="
+                              Địa chỉ giao hàng...
+                            "
+                            className="
+                              w-full
+                              pl-10
+                              pr-4
+                              py-3
+                              rounded-xl
+                              border
+                              border-slate-200
+                              outline-none
+                              text-sm
+                              resize-none
+                              focus:border-sky-400
+                              focus:ring-4
+                              focus:ring-sky-100
+                            "
                           />
 
                         </div>
 
                       </div>
 
-                      <div>
 
-                        <label className="block text-sm font-bold text-slate-700 mb-1.5">
+                      {/* NOTE */}
+
+                      <div className="mt-3">
+
+                        <label
+                          className="
+                            block
+                            text-xs
+                            font-bold
+                            text-slate-500
+                            mb-1.5
+                          "
+                        >
                           Ghi chú
                         </label>
 
@@ -1663,188 +3577,539 @@ export default function AdminOrders() {
                           value={
                             orderForm.note
                           }
-                          onChange={(e) =>
-                            setOrderForm({
-                              ...orderForm,
-                              note:
-                                e.target.value
-                            })
+                          onChange={
+                            (event) =>
+                              setOrderForm(
+                                (prev) => ({
+                                  ...prev,
+                                  note:
+                                    event.target.value
+                                })
+                              )
                           }
                           rows={2}
-                          className="w-full px-3 py-3 rounded-xl border border-slate-200 outline-none resize-none focus:border-sky-400"
-                          placeholder="Ghi chú đơn hàng..."
+                          placeholder="
+                            Ghi chú đơn hàng...
+                          "
+                          className="
+                            w-full
+                            px-4
+                            py-3
+                            rounded-xl
+                            border
+                            border-slate-200
+                            outline-none
+                            text-sm
+                            resize-none
+                            focus:border-sky-400
+                            focus:ring-4
+                            focus:ring-sky-100
+                          "
                         />
 
                       </div>
 
                     </div>
 
-                  </div>
 
-                  {/* ADD PRODUCT */}
+                    {/* ADD PRODUCT */}
 
-                  <div>
+                    <div
+                      className="
+                        border-t
+                        border-slate-100
+                        pt-5
+                      "
+                    >
 
-                    <h3 className="font-black text-slate-900 mb-3">
-                      Thêm sản phẩm
-                    </h3>
+                      <h3
+                        className="
+                          font-black
+                          text-slate-900
+                          mb-3
+                        "
+                      >
+                        Thêm sản phẩm
+                      </h3>
 
-                    <div className="border border-slate-200 rounded-2xl p-4">
 
-                      <div className="relative">
+                      {/* PRODUCT SEARCH */}
 
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <div
+                        className="
+                          relative
+                        "
+                      >
 
-                        <input
-                          type="text"
-                          value={
-                            productSearch
-                          }
-                          onChange={(e) =>
-                            setProductSearch(
-                              e.target.value
-                            )
-                          }
-                          className="w-full h-11 pl-10 pr-3 rounded-xl border border-slate-200 outline-none focus:border-sky-400"
-                          placeholder="Tìm tên sản phẩm, album..."
-                        />
+                        <label
+                          className="
+                            block
+                            text-xs
+                            font-bold
+                            text-slate-500
+                            mb-1.5
+                          "
+                        >
+                          Tìm sản phẩm
+                        </label>
 
-                      </div>
 
-                      <div className="mt-3 max-h-52 overflow-y-auto space-y-2">
+                        <div
+                          className="
+                            relative
+                          "
+                        >
 
-                        {loadingProducts && (
-                          <div className="py-5 text-center">
-                            <Loader2 className="w-5 h-5 animate-spin text-sky-500 mx-auto" />
-                          </div>
-                        )}
+                          <Search
+                            className="
+                              absolute
+                              left-3
+                              top-1/2
+                              -translate-y-1/2
+                              w-4
+                              h-4
+                              text-slate-400
+                            "
+                          />
 
-                        {!loadingProducts &&
-                          filteredProducts.map(
-                            (product) => (
-                              <button
-                                type="button"
-                                key={product.id}
-                                onClick={() =>
-                                  handleSelectProduct(
-                                    product
-                                  )
-                                }
-                                className={`w-full text-left p-3 rounded-xl border transition ${
-                                  selectedProduct?.id ===
-                                  product.id
-                                    ? 'border-sky-400 bg-sky-50'
-                                    : 'border-slate-100 hover:bg-slate-50'
-                                }`}
+                          <input
+                            type="text"
+                            value={
+                              productSearch
+                            }
+                            onChange={
+                              (event) => {
+
+                                setProductSearch(
+                                  event.target.value
+                                );
+
+                                setShowProductList(
+                                  event.target.value.trim()
+                                    .length > 0
+                                );
+
+                              }
+                            }
+                            onFocus={() => {
+
+                              if (
+                                productSearch.trim()
+                              ) {
+                                setShowProductList(
+                                  true
+                                );
+                              }
+
+                            }}
+                            placeholder="
+                              Nhập tên sản phẩm, album...
+                            "
+                            className="
+                              w-full
+                              h-11
+                              pl-10
+                              pr-4
+                              rounded-xl
+                              border
+                              border-slate-200
+                              outline-none
+                              text-sm
+                              focus:border-sky-400
+                              focus:ring-4
+                              focus:ring-sky-100
+                            "
+                          />
+
+                        </div>
+
+
+                        {/* PRODUCT DROPDOWN */}
+
+                        {showProductList && (
+
+                          <div
+                            className="
+                              absolute
+                              z-30
+                              left-0
+                              right-0
+                              top-full
+                              mt-2
+                              bg-white
+                              border
+                              border-slate-200
+                              rounded-xl
+                              shadow-xl
+                              max-h-72
+                              overflow-y-auto
+                            "
+                          >
+
+                            {loadingProducts ? (
+
+                              <div
+                                className="
+                                  p-4
+                                  flex
+                                  items-center
+                                  gap-2
+                                  text-sm
+                                  text-slate-500
+                                "
                               >
 
-                                <div className="flex items-center gap-3">
+                                <Loader2
+                                  className="
+                                    w-4
+                                    h-4
+                                    animate-spin
+                                  "
+                                />
 
-                                  <div className="w-11 h-11 rounded-lg bg-slate-100 overflow-hidden shrink-0">
+                                Đang tải sản phẩm...
 
-                                    {product.image_url ? (
-                                      <img
-                                        src={
-                                          product.image_url
-                                        }
-                                        alt={
-                                          product.title
-                                        }
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <Package className="w-5 h-5 text-slate-300 m-auto mt-3" />
-                                    )}
+                              </div>
 
-                                  </div>
+                            ) : filteredProducts.length > 0 ? (
 
-                                  <div className="min-w-0 flex-1">
+                              filteredProducts.map(
+                                (product) => (
 
-                                    <p className="font-bold text-sm text-slate-800 truncate">
-                                      {
-                                        product.title
-                                      }
-                                    </p>
+                                  <button
+                                    key={
+                                      product.id
+                                    }
+                                    type="button"
+                                    onClick={() =>
+                                      handleSelectProduct(
+                                        product
+                                      )
+                                    }
+                                    className="
+                                      w-full
+                                      text-left
+                                      p-3
+                                      hover:bg-sky-50
+                                      border-b
+                                      border-slate-100
+                                      last:border-0
+                                    "
+                                  >
 
-                                    {product.version_name && (
-                                      <p className="text-xs text-slate-500 truncate">
-                                        {
-                                          product.version_name
-                                        }
-                                      </p>
-                                    )}
+                                    <div
+                                      className="
+                                        flex
+                                        gap-3
+                                      "
+                                    >
 
-                                    <p className="text-xs text-sky-600 font-bold mt-1">
-                                      {formatMoney(
-                                        product.price
+                                      {product.image_url ? (
+
+                                        <img
+                                          src={
+                                            product.image_url
+                                          }
+                                          alt=""
+                                          className="
+                                            w-12
+                                            h-12
+                                            rounded-lg
+                                            object-cover
+                                            flex-shrink-0
+                                          "
+                                        />
+
+                                      ) : (
+
+                                        <div
+                                          className="
+                                            w-12
+                                            h-12
+                                            rounded-lg
+                                            bg-slate-100
+                                            flex
+                                            items-center
+                                            justify-center
+                                            flex-shrink-0
+                                          "
+                                        >
+
+                                          <Package
+                                            className="
+                                              w-5
+                                              h-5
+                                              text-slate-400
+                                            "
+                                          />
+
+                                        </div>
+
                                       )}
-                                    </p>
 
-                                  </div>
 
-                                </div>
+                                      <div
+                                        className="
+                                          min-w-0
+                                          flex-1
+                                        "
+                                      >
 
-                              </button>
-                            )
-                          )}
+                                        <p
+                                          className="
+                                            font-bold
+                                            text-sm
+                                            text-slate-800
+                                          "
+                                        >
+                                          {product.title}
+                                        </p>
+
+
+                                        {product.version_name && (
+
+                                          <p
+                                            className="
+                                              text-xs
+                                              text-slate-500
+                                              mt-0.5
+                                            "
+                                          >
+                                            Version:
+                                            {' '}
+                                            {product.version_name}
+                                          </p>
+
+                                        )}
+
+
+                                        {product.album_name && (
+
+                                          <p
+                                            className="
+                                              text-xs
+                                              text-slate-400
+                                              truncate
+                                            "
+                                          >
+                                            {product.album_name}
+                                          </p>
+
+                                        )}
+
+
+                                        <div
+                                          className="
+                                            flex
+                                            items-center
+                                            gap-2
+                                            mt-1
+                                          "
+                                        >
+
+                                          <span
+                                            className="
+                                              text-xs
+                                              font-bold
+                                              text-sky-600
+                                            "
+                                          >
+                                            {formatMoney(
+                                              product.price
+                                            )}
+                                          </span>
+
+                                          <span
+                                            className="
+                                              text-[10px]
+                                              px-1.5
+                                              py-0.5
+                                              rounded
+                                              bg-slate-100
+                                              text-slate-500
+                                            "
+                                          >
+                                            {categoryLabel[
+                                              product.category
+                                            ] ||
+                                              product.category}
+                                          </span>
+
+                                        </div>
+
+                                      </div>
+
+                                    </div>
+
+                                  </button>
+
+                                )
+                              )
+
+                            ) : (
+
+                              <div
+                                className="
+                                  p-4
+                                  text-sm
+                                  text-slate-500
+                                "
+                              >
+                                Không tìm thấy sản phẩm.
+                              </div>
+
+                            )}
+
+                          </div>
+
+                        )}
 
                       </div>
+
 
                       {/* SELECTED PRODUCT */}
 
                       {selectedProduct && (
-                        <div className="mt-4 pt-4 border-t border-slate-100">
 
-                          <p className="text-xs font-bold text-slate-500 mb-3">
-                            Sản phẩm đã chọn
-                          </p>
+                        <div
+                          className="
+                            mt-3
+                            p-3
+                            rounded-xl
+                            bg-sky-50
+                            border
+                            border-sky-100
+                          "
+                        >
 
-                          <div className="grid sm:grid-cols-3 gap-3">
+                          <div
+                            className="
+                              flex
+                              items-center
+                              gap-3
+                            "
+                          >
 
-                            <div className="sm:col-span-3">
+                            {selectedProduct.image_url ? (
 
-                              <p className="font-bold text-sm text-slate-800">
+                              <img
+                                src={
+                                  selectedProduct.image_url
+                                }
+                                alt=""
+                                className="
+                                  w-12
+                                  h-12
+                                  rounded-lg
+                                  object-cover
+                                "
+                              />
+
+                            ) : (
+
+                              <div
+                                className="
+                                  w-12
+                                  h-12
+                                  rounded-lg
+                                  bg-white
+                                  flex
+                                  items-center
+                                  justify-center
+                                "
+                              >
+
+                                <Package
+                                  className="
+                                    w-5
+                                    h-5
+                                    text-slate-400
+                                  "
+                                />
+
+                              </div>
+
+                            )}
+
+
+                            <div
+                              className="
+                                flex-1
+                                min-w-0
+                              "
+                            >
+
+                              <p
+                                className="
+                                  font-bold
+                                  text-sm
+                                  text-slate-800
+                                  truncate
+                                "
+                              >
                                 {
                                   selectedProduct.title
                                 }
                               </p>
 
                               {selectedProduct.version_name && (
-                                <p className="text-xs text-slate-500">
+
+                                <p
+                                  className="
+                                    text-xs
+                                    text-slate-500
+                                  "
+                                >
                                   {
                                     selectedProduct.version_name
                                   }
                                 </p>
+
                               )}
 
+                              <p
+                                className="
+                                  text-xs
+                                  text-slate-500
+                                "
+                              >
+                                Giá niêm yết:
+                                {' '}
+                                <strong>
+                                  {formatMoney(
+                                    selectedProduct.price
+                                  )}
+                                </strong>
+                              </p>
+
                             </div>
+
+                          </div>
+
+
+                          {/* PRICE + QUANTITY */}
+
+                          <div
+                            className="
+                              grid
+                              grid-cols-2
+                              gap-3
+                              mt-3
+                            "
+                          >
 
                             <div>
 
-                              <label className="block text-xs font-bold text-slate-500 mb-1">
-                                Số lượng
-                              </label>
-
-                              <input
-                                type="number"
-                                min="1"
-                                value={
-                                  selectedQuantity
-                                }
-                                onChange={(e) =>
-                                  setSelectedQuantity(
-                                    e.target.value
-                                  )
-                                }
-                                className="w-full h-10 px-3 rounded-lg border border-slate-200 outline-none focus:border-sky-400"
-                              />
-
-                            </div>
-
-                            <div className="sm:col-span-2">
-
-                              <label className="block text-xs font-bold text-slate-500 mb-1">
-                                Giá bán thực tế
+                              <label
+                                className="
+                                  block
+                                  text-xs
+                                  font-bold
+                                  text-slate-500
+                                  mb-1.5
+                                "
+                              >
+                                Giá bán
                               </label>
 
                               <input
@@ -1853,222 +4118,602 @@ export default function AdminOrders() {
                                 value={
                                   selectedPrice
                                 }
-                                onChange={(e) =>
-                                  setSelectedPrice(
-                                    e.target.value
-                                  )
+                                onChange={
+                                  (event) =>
+                                    setSelectedPrice(
+                                      event.target.value
+                                    )
                                 }
-                                className="w-full h-10 px-3 rounded-lg border border-slate-200 outline-none focus:border-sky-400"
+                                className="
+                                  w-full
+                                  h-10
+                                  px-3
+                                  rounded-lg
+                                  border
+                                  border-slate-200
+                                  bg-white
+                                  outline-none
+                                  text-sm
+                                  font-bold
+                                  focus:border-sky-400
+                                "
                               />
 
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={
-                                addProductToOrder
-                              }
-                              className="sm:col-span-3 h-10 rounded-lg bg-sky-500 text-white text-sm font-bold hover:bg-sky-600"
-                            >
-                              <Plus className="w-4 h-4 inline mr-1" />
-                              Thêm vào đơn
-                            </button>
+
+                            <div>
+
+                              <label
+                                className="
+                                  block
+                                  text-xs
+                                  font-bold
+                                  text-slate-500
+                                  mb-1.5
+                                "
+                              >
+                                Số lượng
+                              </label>
+
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={
+                                  selectedQuantity
+                                }
+                                onChange={
+                                  (event) =>
+                                    setSelectedQuantity(
+                                      event.target.value
+                                    )
+                                }
+                                className="
+                                  w-full
+                                  h-10
+                                  px-3
+                                  rounded-lg
+                                  border
+                                  border-slate-200
+                                  bg-white
+                                  outline-none
+                                  text-sm
+                                  font-bold
+                                  focus:border-sky-400
+                                "
+                              />
+
+                            </div>
 
                           </div>
 
+
+                          <button
+                            type="button"
+                            onClick={
+                              handleAddProduct
+                            }
+                            className="
+                              w-full
+                              mt-3
+                              h-10
+                              rounded-lg
+                              bg-sky-500
+                              text-white
+                              font-bold
+                              text-sm
+                              hover:bg-sky-600
+                              transition
+                            "
+                          >
+                            Thêm vào bill
+                          </button>
+
                         </div>
+
                       )}
 
                     </div>
 
                   </div>
 
-                </div>
 
-                {/* =================================================
-                    RIGHT
-                ================================================= */}
+                  {/* =========================================
+                      RIGHT - BILL
+                  ========================================= */}
 
-                <div>
+                  <div
+                    className="
+                      rounded-2xl
+                      border
+                      border-slate-200
+                      bg-slate-50
+                      p-4
+                      sm:p-5
+                      flex
+                      flex-col
+                      min-h-[450px]
+                    "
+                  >
 
-                  <div className="flex items-center justify-between mb-3">
+                    <div
+                      className="
+                        flex
+                        items-center
+                        justify-between
+                        mb-4
+                      "
+                    >
 
-                    <div>
-                      <h3 className="font-black text-slate-900">
-                        Sản phẩm trong đơn
-                      </h3>
+                      <div>
 
-                      <p className="text-xs text-slate-500 mt-1">
-                        {orderForm.items.length}{' '}
-                        sản phẩm
-                      </p>
-                    </div>
+                        <h3
+                          className="
+                            font-black
+                            text-slate-900
+                          "
+                        >
+                          BILL
+                        </h3>
 
-                  </div>
-
-                  <div className="border border-slate-200 rounded-2xl overflow-hidden">
-
-                    {orderForm.items.length === 0 ? (
-                      <div className="py-16 px-5 text-center">
-
-                        <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-
-                        <p className="font-bold text-slate-500">
-                          Chưa có sản phẩm
-                        </p>
-
-                        <p className="text-xs text-slate-400 mt-1">
-                          Chọn sản phẩm bên trái để thêm vào đơn
+                        <p
+                          className="
+                            text-xs
+                            text-slate-500
+                            mt-1
+                          "
+                        >
+                          {orderForm.items.length}
+                          {' '}
+                          sản phẩm
                         </p>
 
                       </div>
-                    ) : (
-                      <div className="divide-y divide-slate-100">
 
-                        {orderForm.items.map(
-                          (item, index) => (
-                            <div
-                              key={`${item.product_id}-${index}`}
-                              className="p-4"
-                            >
 
-                              <div className="flex gap-3">
+                      {orderForm.items.length > 0 && (
 
-                                <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOrderForm(
+                              (prev) => ({
+                                ...prev,
+                                items: []
+                              })
+                            )
+                          }
+                          className="
+                            text-xs
+                            font-bold
+                            text-red-500
+                            hover:underline
+                          "
+                        >
+                          Xóa tất cả
+                        </button>
+
+                      )}
+
+                    </div>
+
+
+                    {/* BILL ITEMS */}
+
+                    <div
+                      className="
+                        flex-1
+                        space-y-3
+                        overflow-y-auto
+                        max-h-[500px]
+                        pr-1
+                      "
+                    >
+
+                      {orderForm.items.length === 0 ? (
+
+                        <div
+                          className="
+                            h-full
+                            min-h-[300px]
+                            flex
+                            flex-col
+                            items-center
+                            justify-center
+                            text-center
+                            text-slate-400
+                          "
+                        >
+
+                          <ShoppingCart
+                            className="
+                              w-12
+                              h-12
+                              mb-3
+                              text-slate-300
+                            "
+                          />
+
+                          <p
+                            className="
+                              font-bold
+                              text-slate-500
+                            "
+                          >
+                            Bill đang trống
+                          </p>
+
+                          <p
+                            className="
+                              text-xs
+                              mt-1
+                              max-w-[220px]
+                            "
+                          >
+                            Tìm sản phẩm ở bên trái
+                            để thêm vào bill.
+                          </p>
+
+                        </div>
+
+                      ) : (
+
+                        orderForm.items.map(
+                          (
+                            item,
+                            index
+                          ) => {
+
+                            const lineTotal =
+                              Number(
+                                item.price || 0
+                              ) *
+                              Number(
+                                item.quantity || 0
+                              );
+
+
+                            return (
+
+                              <div
+                                key={
+                                  `${item.product_id}-${index}`
+                                }
+                                className="
+                                  bg-white
+                                  rounded-xl
+                                  border
+                                  border-slate-200
+                                  p-3
+                                "
+                              >
+
+                                <div
+                                  className="
+                                    flex
+                                    gap-3
+                                  "
+                                >
 
                                   {item.image_url ? (
+
                                     <img
                                       src={
                                         item.image_url
                                       }
-                                      alt={
-                                        item.title
-                                      }
-                                      className="w-full h-full object-cover"
+                                      alt=""
+                                      className="
+                                        w-12
+                                        h-12
+                                        rounded-lg
+                                        object-cover
+                                        flex-shrink-0
+                                      "
                                     />
+
                                   ) : (
-                                    <Package className="w-6 h-6 text-slate-300 mx-auto mt-4" />
-                                  )}
 
-                                </div>
-
-                                <div className="flex-1 min-w-0">
-
-                                  <div className="flex justify-between gap-2">
-
-                                    <div className="min-w-0">
-
-                                      <p className="font-bold text-sm text-slate-800">
-                                        {item.title}
-                                      </p>
-
-                                      {item.version_name && (
-                                        <p className="text-xs text-slate-500 mt-0.5">
-                                          {
-                                            item.version_name
-                                          }
-                                        </p>
-                                      )}
-
-                                    </div>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        removeOrderItem(
-                                          index
-                                        )
-                                      }
-                                      className="w-8 h-8 rounded-lg flex items-center justify-center text-red-400 hover:bg-red-50 shrink-0"
+                                    <div
+                                      className="
+                                        w-12
+                                        h-12
+                                        rounded-lg
+                                        bg-slate-100
+                                        flex
+                                        items-center
+                                        justify-center
+                                        flex-shrink-0
+                                      "
                                     >
-                                      <Trash2 className="w-4 h-4" />
-                                    </button>
 
-                                  </div>
-
-                                  <div className="grid grid-cols-2 gap-2 mt-3">
-
-                                    <div>
-
-                                      <label className="text-[11px] font-bold text-slate-400">
-                                        Giá bán
-                                      </label>
-
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={
-                                          item.price
-                                        }
-                                        onChange={(e) =>
-                                          changeItemPrice(
-                                            index,
-                                            e.target.value
-                                          )
-                                        }
-                                        className="w-full mt-1 h-9 px-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-sky-400"
+                                      <Package
+                                        className="
+                                          w-5
+                                          h-5
+                                          text-slate-400
+                                        "
                                       />
 
                                     </div>
 
-                                    <div>
+                                  )}
 
-                                      <label className="text-[11px] font-bold text-slate-400">
-                                        Số lượng
-                                      </label>
 
-                                      <div className="flex items-center mt-1 h-9 border border-slate-200 rounded-lg overflow-hidden">
+                                  <div
+                                    className="
+                                      flex-1
+                                      min-w-0
+                                    "
+                                  >
 
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            changeItemQuantity(
-                                              index,
-                                              -1
-                                            )
-                                          }
-                                          className="w-8 h-full flex items-center justify-center hover:bg-slate-50"
+                                    <div
+                                      className="
+                                        flex
+                                        items-start
+                                        justify-between
+                                        gap-2
+                                      "
+                                    >
+
+                                      <div
+                                        className="
+                                          min-w-0
+                                        "
+                                      >
+
+                                        <p
+                                          className="
+                                            text-sm
+                                            font-bold
+                                            text-slate-800
+                                          "
                                         >
-                                          <Minus className="w-3.5 h-3.5" />
-                                        </button>
+                                          {item.title}
+                                        </p>
 
-                                        <span className="flex-1 text-center text-sm font-bold">
-                                          {
-                                            item.quantity
-                                          }
-                                        </span>
 
-                                        <button
-                                          type="button"
-                                          onClick={() =>
-                                            changeItemQuantity(
-                                              index,
-                                              1
-                                            )
-                                          }
-                                          className="w-8 h-full flex items-center justify-center hover:bg-slate-50"
+                                        {item.version_name && (
+
+                                          <p
+                                            className="
+                                              text-xs
+                                              text-slate-500
+                                              mt-0.5
+                                            "
+                                          >
+                                            {item.version_name}
+                                          </p>
+
+                                        )}
+
+                                      </div>
+
+
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          removeOrderItem(
+                                            index
+                                          )
+                                        }
+                                        className="
+                                          w-7
+                                          h-7
+                                          rounded-lg
+                                          text-red-400
+                                          hover:bg-red-50
+                                          hover:text-red-600
+                                          flex
+                                          items-center
+                                          justify-center
+                                          flex-shrink-0
+                                        "
+                                      >
+
+                                        <Trash2
+                                          className="
+                                            w-4
+                                            h-4
+                                          "
+                                        />
+
+                                      </button>
+
+                                    </div>
+
+
+                                    {/* PRICE */}
+
+                                    <div
+                                      className="
+                                        mt-3
+                                        grid
+                                        grid-cols-2
+                                        gap-2
+                                      "
+                                    >
+
+                                      <div>
+
+                                        <label
+                                          className="
+                                            block
+                                            text-[10px]
+                                            font-bold
+                                            uppercase
+                                            text-slate-400
+                                            mb-1
+                                          "
                                         >
-                                          <Plus className="w-3.5 h-3.5" />
-                                        </button>
+                                          Đơn giá
+                                        </label>
+
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={
+                                            item.price
+                                          }
+                                          onChange={
+                                            (event) =>
+                                              changeItemPrice(
+                                                index,
+                                                event.target.value
+                                              )
+                                          }
+                                          className="
+                                            w-full
+                                            h-9
+                                            px-2
+                                            rounded-lg
+                                            border
+                                            border-slate-200
+                                            text-sm
+                                            font-bold
+                                            outline-none
+                                            focus:border-sky-400
+                                          "
+                                        />
+
+                                      </div>
+
+
+                                      <div>
+
+                                        <label
+                                          className="
+                                            block
+                                            text-[10px]
+                                            font-bold
+                                            uppercase
+                                            text-slate-400
+                                            mb-1
+                                          "
+                                        >
+                                          Số lượng
+                                        </label>
+
+                                        <div
+                                          className="
+                                            h-9
+                                            flex
+                                            items-center
+                                            border
+                                            border-slate-200
+                                            rounded-lg
+                                            overflow-hidden
+                                          "
+                                        >
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              changeItemQuantity(
+                                                index,
+                                                -1
+                                              )
+                                            }
+                                            className="
+                                              w-9
+                                              h-full
+                                              flex
+                                              items-center
+                                              justify-center
+                                              hover:bg-slate-50
+                                            "
+                                          >
+
+                                            <Minus
+                                              className="
+                                                w-3
+                                                h-3
+                                              "
+                                            />
+
+                                          </button>
+
+
+                                          <span
+                                            className="
+                                              flex-1
+                                              text-center
+                                              text-sm
+                                              font-bold
+                                            "
+                                          >
+                                            {
+                                              item.quantity
+                                            }
+                                          </span>
+
+
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              changeItemQuantity(
+                                                index,
+                                                1
+                                              )
+                                            }
+                                            className="
+                                              w-9
+                                              h-full
+                                              flex
+                                              items-center
+                                              justify-center
+                                              hover:bg-slate-50
+                                            "
+                                          >
+
+                                            <Plus
+                                              className="
+                                                w-3
+                                                h-3
+                                              "
+                                            />
+
+                                          </button>
+
+                                        </div>
 
                                       </div>
 
                                     </div>
 
-                                  </div>
 
-                                  <div className="text-right mt-3">
+                                    {/* LINE TOTAL */}
 
-                                    <span className="text-sm font-black text-slate-900">
-                                      {formatMoney(
-                                        Number(
-                                          item.price
-                                        ) *
-                                          Number(
-                                            item.quantity
-                                          )
-                                      )}
-                                    </span>
+                                    <div
+                                      className="
+                                        flex
+                                        items-center
+                                        justify-between
+                                        mt-3
+                                      "
+                                    >
+
+                                      <span
+                                        className="
+                                          text-xs
+                                          text-slate-400
+                                        "
+                                      >
+                                        Thành tiền
+                                      </span>
+
+                                      <span
+                                        className="
+                                          font-black
+                                          text-slate-900
+                                        "
+                                      >
+                                        {formatMoney(
+                                          lineTotal
+                                        )}
+                                      </span>
+
+                                    </div>
 
                                   </div>
 
@@ -2076,24 +4721,52 @@ export default function AdminOrders() {
 
                               </div>
 
-                            </div>
-                          )
-                        )}
+                            );
+                          }
+                        )
 
-                      </div>
-                    )}
+                      )}
 
-                    {/* TOTAL */}
+                    </div>
 
-                    <div className="border-t border-slate-200 bg-slate-50 p-4">
 
-                      <div className="flex items-center justify-between">
+                    {/* BILL TOTAL */}
 
-                        <span className="font-bold text-slate-600">
+                    <div
+                      className="
+                        border-t
+                        border-slate-200
+                        mt-4
+                        pt-4
+                      "
+                    >
+
+                      <div
+                        className="
+                          flex
+                          items-center
+                          justify-between
+                        "
+                      >
+
+                        <span
+                          className="
+                            text-sm
+                            font-bold
+                            text-slate-500
+                          "
+                        >
                           Tổng cộng
                         </span>
 
-                        <span className="text-xl font-black text-slate-900">
+                        <span
+                          className="
+                            text-xl
+                            sm:text-2xl
+                            font-black
+                            text-sky-600
+                          "
+                        >
                           {formatMoney(
                             orderTotal
                           )}
@@ -2107,444 +4780,853 @@ export default function AdminOrders() {
 
                 </div>
 
-              </div>
 
-              {/* FOOTER */}
+                {/* MODAL FOOTER */}
 
-              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-6 mt-6 border-t border-slate-100">
-
-                <button
-                  type="button"
-                  onClick={closeCreateModal}
-                  disabled={creating}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50"
-                >
-                  Hủy
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={
-                    creating ||
-                    orderForm.items.length ===
-                      0
-                  }
-                  className="px-5 py-2.5 rounded-xl bg-sky-500 text-white text-sm font-bold hover:bg-sky-600 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                <div
+                  className="
+                    px-4
+                    sm:px-6
+                    py-4
+                    border-t
+                    border-slate-100
+                    flex
+                    flex-col-reverse
+                    sm:flex-row
+                    sm:justify-end
+                    gap-2
+                  "
                 >
 
-                  {creating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Đang tạo...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4" />
-                      Tạo đơn hàng
-                    </>
-                  )}
+                  <button
+                    type="button"
+                    onClick={
+                      closeCreateModal
+                    }
+                    disabled={
+                      creating
+                    }
+                    className="
+                      h-11
+                      px-5
+                      rounded-xl
+                      border
+                      border-slate-200
+                      text-slate-700
+                      font-bold
+                      text-sm
+                      hover:bg-slate-50
+                      disabled:opacity-50
+                    "
+                  >
+                    Hủy
+                  </button>
 
-                </button>
 
-              </div>
+                  <button
+                    type="submit"
+                    disabled={
+                      creating ||
+                      orderForm.items.length === 0
+                    }
+                    className="
+                      h-11
+                      px-5
+                      rounded-xl
+                      bg-sky-500
+                      text-white
+                      font-bold
+                      text-sm
+                      inline-flex
+                      items-center
+                      justify-center
+                      gap-2
+                      hover:bg-sky-600
+                      disabled:opacity-50
+                      disabled:cursor-not-allowed
+                    "
+                  >
 
-            </form>
+                    {creating ? (
+
+                      <>
+                        <Loader2
+                          className="
+                            w-4
+                            h-4
+                            animate-spin
+                          "
+                        />
+
+                        Đang tạo...
+
+                      </>
+
+                    ) : (
+
+                      <>
+                        <ShoppingCart
+                          className="
+                            w-4
+                            h-4
+                          "
+                        />
+
+                        Tạo đơn hàng
+                      </>
+
+                    )}
+
+                  </button>
+
+                </div>
+
+              </form>
+
+            </div>
 
           </div>
 
         </div>
+
       )}
 
-      {/* =====================================================
+
+      {/* ======================================================
           DETAIL MODAL
-      ===================================================== */}
+      ====================================================== */}
 
       {showDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+
+        <div
+          className="
+            fixed
+            inset-0
+            z-50
+            bg-black/50
+            backdrop-blur-sm
+            p-3
+            sm:p-5
+            overflow-y-auto
+          "
+          onMouseDown={(event) => {
+
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+
+              setShowDetailModal(
+                false
+              );
+
+            }
+
+          }}
+        >
 
           <div
-            className="absolute inset-0 bg-black/40"
-            onClick={() =>
-              setShowDetailModal(false)
-            }
-          />
+            className="
+              min-h-full
+              flex
+              items-center
+              justify-center
+            "
+          >
 
-          <div className="relative w-full max-w-3xl max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div
+              className="
+                w-full
+                max-w-3xl
+                bg-white
+                rounded-2xl
+                shadow-2xl
+                overflow-hidden
+              "
+            >
 
-            {/* HEADER */}
+              {/* HEADER */}
 
-            <div className="px-5 sm:px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+              <div
+                className="
+                  px-5
+                  sm:px-6
+                  py-4
+                  border-b
+                  border-slate-100
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
 
-              <div>
+                <div>
 
-                <h2 className="font-black text-lg text-slate-900">
-                  Chi tiết đơn hàng
-                </h2>
+                  <h2
+                    className="
+                      text-lg
+                      sm:text-xl
+                      font-black
+                      text-slate-900
+                    "
+                  >
+                    Chi tiết đơn hàng
+                  </h2>
 
-                {selectedOrder && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Đơn #{selectedOrder.id}
-                  </p>
-                )}
+                  {selectedOrder && (
+
+                    <p
+                      className="
+                        text-sm
+                        text-slate-500
+                        mt-1
+                      "
+                    >
+                      Đơn #
+                      {selectedOrder.id}
+                    </p>
+
+                  )}
+
+                </div>
+
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowDetailModal(
+                      false
+                    )
+                  }
+                  className="
+                    w-9
+                    h-9
+                    rounded-xl
+                    hover:bg-slate-100
+                    flex
+                    items-center
+                    justify-center
+                    text-slate-500
+                  "
+                >
+
+                  <X
+                    className="
+                      w-5
+                      h-5
+                    "
+                  />
+
+                </button>
 
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setShowDetailModal(false)
-                }
-                className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-slate-100 text-slate-500"
-              >
-                <X className="w-5 h-5" />
-              </button>
 
-            </div>
+              {/* BODY */}
 
-            {/* BODY */}
+              {loadingDetail ? (
 
-            <div className="overflow-y-auto p-5 sm:p-6">
+                <div
+                  className="
+                    py-20
+                    flex
+                    items-center
+                    justify-center
+                    text-slate-500
+                  "
+                >
 
-              {loadingDetail && (
-                <div className="py-20 text-center">
-
-                  <Loader2 className="w-8 h-8 animate-spin text-sky-500 mx-auto mb-3" />
-
-                  <p className="text-sm text-slate-500">
-                    Đang tải đơn hàng...
-                  </p>
+                  <Loader2
+                    className="
+                      w-7
+                      h-7
+                      animate-spin
+                    "
+                  />
 
                 </div>
-              )}
 
-              {!loadingDetail &&
-                selectedOrder && (
-                  <div className="space-y-5">
+              ) : selectedOrder ? (
 
-                    {/* CUSTOMER */}
+                <div
+                  className="
+                    p-5
+                    sm:p-6
+                    space-y-5
+                  "
+                >
 
-                    <div className="grid sm:grid-cols-2 gap-3">
+                  {/* CUSTOMER */}
 
-                      <InfoBox
-                        icon={
-                          <User className="w-4 h-4" />
-                        }
-                        label="Khách hàng"
-                        value={
-                          selectedOrder.customer_name ||
+                  <div
+                    className="
+                      grid
+                      grid-cols-1
+                      sm:grid-cols-2
+                      gap-3
+                    "
+                  >
+
+                    <div
+                      className="
+                        p-4
+                        rounded-xl
+                        bg-slate-50
+                        border
+                        border-slate-100
+                      "
+                    >
+
+                      <p
+                        className="
+                          text-xs
+                          text-slate-400
+                          font-bold
+                          uppercase
+                        "
+                      >
+                        Khách hàng
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          font-black
+                          text-slate-800
+                        "
+                      >
+                        {selectedOrder.customer_name ||
                           selectedOrder.user_name ||
-                          '--'
-                        }
-                      />
-
-                      <InfoBox
-                        icon={
-                          <Phone className="w-4 h-4" />
-                        }
-                        label="Số điện thoại"
-                        value={
-                          selectedOrder.phone ||
-                          '--'
-                        }
-                      />
-
-                      <InfoBox
-                        icon={
-                          <MapPin className="w-4 h-4" />
-                        }
-                        label="Địa chỉ"
-                        value={
-                          selectedOrder.address ||
-                          '--'
-                        }
-                      />
-
-                      <InfoBox
-                        icon={
-                          <ShoppingBag className="w-4 h-4" />
-                        }
-                        label="Ngày tạo"
-                        value={formatDate(
-                          selectedOrder.created_at
-                        )}
-                      />
+                          '--'}
+                      </p>
 
                     </div>
 
-                    {/* STATUS */}
 
-                    <div className="border border-slate-200 rounded-2xl p-4">
+                    <div
+                      className="
+                        p-4
+                        rounded-xl
+                        bg-slate-50
+                        border
+                        border-slate-100
+                      "
+                    >
 
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-
-                        <div>
-
-                          <p className="text-xs font-bold text-slate-400 uppercase">
-                            Trạng thái
-                          </p>
-
-                          <span
-                            className={`inline-flex mt-2 px-3 py-1.5 rounded-lg text-xs font-bold ${getStatusClass(
-                              selectedOrder.status
-                            )}`}
-                          >
-                            {getStatusLabel(
-                              selectedOrder.status
-                            )}
-                          </span>
-
-                        </div>
-
-                        <select
-                          value={
-                            selectedOrder.status ||
-                            ''
-                          }
-                          disabled={
-                            updatingStatus
-                          }
-                          onChange={(e) =>
-                            handleUpdateStatus(
-                              selectedOrder.id,
-                              e.target.value
-                            )
-                          }
-                          className="h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm outline-none"
-                        >
-
-                          {statuses
-                            .filter(
-                              (status) =>
-                                status.value
-                            )
-                            .map(
-                              (status) => (
-                                <option
-                                  key={
-                                    status.value
-                                  }
-                                  value={
-                                    status.value
-                                  }
-                                >
-                                  {
-                                    status.label
-                                  }
-                                </option>
-                              )
-                            )}
-
-                        </select>
-
-                      </div>
-
-                    </div>
-
-                    {/* ITEMS */}
-
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
-
-                      <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
-
-                        <h3 className="font-bold text-slate-800">
-                          Sản phẩm
-                        </h3>
-
-                      </div>
-
-                      <div className="divide-y divide-slate-100">
-
-                        {(selectedOrder.items ||
-                          []).map(
-                          (item, index) => (
-                            <div
-                              key={
-                                item.id ||
-                                index
-                              }
-                              className="p-4 flex gap-3"
-                            >
-
-                              <div className="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
-
-                                {item.image_url ? (
-                                  <img
-                                    src={
-                                      item.image_url
-                                    }
-                                    alt={
-                                      item.title
-                                    }
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Package className="w-6 h-6 text-slate-300 mx-auto mt-4" />
-                                )}
-
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-
-                                <p className="font-bold text-sm text-slate-800">
-                                  {item.title ||
-                                    item.product_title ||
-                                    '--'}
-                                </p>
-
-                                {item.version_name && (
-                                  <p className="text-xs text-slate-500 mt-1">
-                                    {
-                                      item.version_name
-                                    }
-                                  </p>
-                                )}
-
-                                <p className="text-xs text-slate-500 mt-2">
-                                  SL:{' '}
-                                  <strong>
-                                    {
-                                      item.quantity
-                                    }
-                                  </strong>
-                                  {' × '}
-                                  {formatMoney(
-                                    item.price
-                                  )}
-                                </p>
-
-                              </div>
-
-                              <div className="text-right shrink-0">
-
-                                <p className="font-black text-sm text-slate-900">
-                                  {formatMoney(
-                                    Number(
-                                      item.price ||
-                                        0
-                                    ) *
-                                      Number(
-                                        item.quantity ||
-                                          0
-                                      )
-                                  )}
-                                </p>
-
-                              </div>
-
-                            </div>
-                          )
-                        )}
-
-                      </div>
-
-                      <div className="border-t border-slate-200 bg-slate-50 px-4 py-4 flex items-center justify-between">
-
-                        <span className="font-bold text-slate-600">
-                          Tổng cộng
-                        </span>
-
-                        <span className="text-xl font-black text-slate-900">
-                          {formatMoney(
-                            selectedOrder.total_amount
-                          )}
-                        </span>
-
-                      </div>
-
-                    </div>
-
-                    {/* ACTION */}
-
-                    <div className="flex flex-col sm:flex-row justify-end gap-2">
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handlePrintBill(
-                            selectedOrder
-                          )
-                        }
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                      <p
+                        className="
+                          text-xs
+                          text-slate-400
+                          font-bold
+                          uppercase
+                        "
                       >
-                        <Printer className="w-4 h-4" />
-                        In Bill
-                      </button>
+                        Số điện thoại
+                      </p>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setShowDetailModal(
-                            false
-                          )
-                        }
-                        className="px-4 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800"
+                      <p
+                        className="
+                          mt-1
+                          font-black
+                          text-slate-800
+                        "
                       >
-                        Đóng
-                      </button>
+                        {selectedOrder.phone ||
+                          '--'}
+                      </p>
+
+                    </div>
+
+
+                    <div
+                      className="
+                        sm:col-span-2
+                        p-4
+                        rounded-xl
+                        bg-slate-50
+                        border
+                        border-slate-100
+                      "
+                    >
+
+                      <p
+                        className="
+                          text-xs
+                          text-slate-400
+                          font-bold
+                          uppercase
+                        "
+                      >
+                        Địa chỉ
+                      </p>
+
+                      <p
+                        className="
+                          mt-1
+                          text-sm
+                          font-medium
+                          text-slate-700
+                        "
+                      >
+                        {selectedOrder.address ||
+                          'Không có địa chỉ'}
+                      </p>
 
                     </div>
 
                   </div>
-                )}
+
+
+                  {/* STATUS */}
+
+                  <div
+                    className="
+                      flex
+                      flex-col
+                      sm:flex-row
+                      sm:items-center
+                      justify-between
+                      gap-3
+                    "
+                  >
+
+                    <div>
+
+                      <p
+                        className="
+                          text-xs
+                          text-slate-400
+                          font-bold
+                          uppercase
+                        "
+                      >
+                        Trạng thái
+                      </p>
+
+                      <span
+                        className={`
+                          mt-2
+                          inline-flex
+                          items-center
+                          gap-1.5
+                          px-3
+                          py-1.5
+                          rounded-full
+                          border
+                          text-xs
+                          font-bold
+                          ${getStatusClass(
+                            selectedOrder.status
+                          )}
+                        `}
+                      >
+
+                        <StatusIcon
+                          status={
+                            selectedOrder.status
+                          }
+                        />
+
+                        {getStatusLabel(
+                          selectedOrder.status
+                        )}
+
+                      </span>
+
+                    </div>
+
+
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-2
+                      "
+                    >
+
+                      <select
+                        value={
+                          selectedOrder.status ||
+                          ''
+                        }
+                        onChange={
+                          (event) =>
+                            handleUpdateStatus(
+                              selectedOrder.id,
+                              event.target.value
+                            )
+                        }
+                        disabled={
+                          updatingStatus
+                        }
+                        className="
+                          h-10
+                          px-3
+                          rounded-lg
+                          border
+                          border-slate-200
+                          bg-white
+                          text-sm
+                          font-bold
+                          outline-none
+                        "
+                      >
+
+                        {statuses.map(
+                          (status) => (
+
+                            <option
+                              key={
+                                status.value
+                              }
+                              value={
+                                status.value
+                              }
+                            >
+                              {status.label}
+                            </option>
+
+                          )
+                        )}
+
+                      </select>
+
+
+                      {updatingStatus && (
+
+                        <Loader2
+                          className="
+                            w-4
+                            h-4
+                            animate-spin
+                            text-sky-500
+                          "
+                        />
+
+                      )}
+
+                    </div>
+
+                  </div>
+
+
+                  {/* ITEMS */}
+
+                  <div>
+
+                    <h3
+                      className="
+                        font-black
+                        text-slate-900
+                        mb-3
+                      "
+                    >
+                      Sản phẩm
+                    </h3>
+
+
+                    <div
+                      className="
+                        border
+                        border-slate-200
+                        rounded-xl
+                        overflow-hidden
+                      "
+                    >
+
+                      {(selectedOrder.items || [])
+                        .map(
+                          (
+                            item,
+                            index
+                          ) => {
+
+                            const lineTotal =
+                              Number(
+                                item.price || 0
+                              ) *
+                              Number(
+                                item.quantity || 0
+                              );
+
+
+                            return (
+
+                              <div
+                                key={
+                                  index
+                                }
+                                className="
+                                  p-3
+                                  sm:p-4
+                                  flex
+                                  gap-3
+                                  border-b
+                                  border-slate-100
+                                  last:border-0
+                                "
+                              >
+
+                                {item.image_url ? (
+
+                                  <img
+                                    src={
+                                      item.image_url
+                                    }
+                                    alt=""
+                                    className="
+                                      w-14
+                                      h-14
+                                      rounded-lg
+                                      object-cover
+                                      flex-shrink-0
+                                    "
+                                  />
+
+                                ) : (
+
+                                  <div
+                                    className="
+                                      w-14
+                                      h-14
+                                      rounded-lg
+                                      bg-slate-100
+                                      flex
+                                      items-center
+                                      justify-center
+                                      flex-shrink-0
+                                    "
+                                  >
+
+                                    <Package
+                                      className="
+                                        w-5
+                                        h-5
+                                        text-slate-400
+                                      "
+                                    />
+
+                                  </div>
+
+                                )}
+
+
+                                <div
+                                  className="
+                                    flex-1
+                                    min-w-0
+                                  "
+                                >
+
+                                  <p
+                                    className="
+                                      font-bold
+                                      text-sm
+                                      text-slate-800
+                                    "
+                                  >
+                                    {item.product_title ||
+                                      item.title ||
+                                      'Sản phẩm'}
+                                  </p>
+
+
+                                  {item.version_name && (
+
+                                    <p
+                                      className="
+                                        text-xs
+                                        text-slate-500
+                                        mt-0.5
+                                      "
+                                    >
+                                      {
+                                        item.version_name
+                                      }
+                                    </p>
+
+                                  )}
+
+
+                                  <p
+                                    className="
+                                      text-xs
+                                      text-slate-500
+                                      mt-2
+                                    "
+                                  >
+                                    {item.quantity}
+                                    {' × '}
+                                    {formatMoney(
+                                      item.price
+                                    )}
+                                  </p>
+
+                                </div>
+
+
+                                <div
+                                  className="
+                                    text-right
+                                    flex-shrink-0
+                                  "
+                                >
+
+                                  <p
+                                    className="
+                                      font-black
+                                      text-slate-900
+                                    "
+                                  >
+                                    {formatMoney(
+                                      lineTotal
+                                    )}
+                                  </p>
+
+                                </div>
+
+                              </div>
+
+                            );
+                          }
+                        )}
+
+                    </div>
+
+                  </div>
+
+
+                  {/* TOTAL */}
+
+                  <div
+                    className="
+                      pt-4
+                      border-t
+                      border-slate-200
+                      flex
+                      items-center
+                      justify-between
+                    "
+                  >
+
+                    <span
+                      className="
+                        font-bold
+                        text-slate-500
+                      "
+                    >
+                      Tổng cộng
+                    </span>
+
+                    <span
+                      className="
+                        text-2xl
+                        font-black
+                        text-sky-600
+                      "
+                    >
+                      {formatMoney(
+                        selectedOrder.total_amount
+                      )}
+                    </span>
+
+                  </div>
+
+
+                  {/* ACTION */}
+
+                  <div
+                    className="
+                      flex
+                      flex-col-reverse
+                      sm:flex-row
+                      justify-end
+                      gap-2
+                    "
+                  >
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowDetailModal(
+                          false
+                        )
+                      }
+                      className="
+                        h-11
+                        px-5
+                        rounded-xl
+                        border
+                        border-slate-200
+                        font-bold
+                        text-sm
+                        text-slate-700
+                        hover:bg-slate-50
+                      "
+                    >
+                      Đóng
+                    </button>
+
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handlePrintOrder(
+                          selectedOrder.id
+                        )
+                      }
+                      className="
+                        h-11
+                        px-5
+                        rounded-xl
+                        bg-slate-900
+                        text-white
+                        font-bold
+                        text-sm
+                        inline-flex
+                        items-center
+                        justify-center
+                        gap-2
+                        hover:bg-slate-800
+                      "
+                    >
+
+                      <Printer
+                        className="
+                          w-4
+                          h-4
+                        "
+                      />
+
+                      In bill
+
+                    </button>
+
+                  </div>
+
+                </div>
+
+              ) : (
+
+                <div
+                  className="
+                    py-20
+                    text-center
+                    text-slate-500
+                  "
+                >
+                  Không có dữ liệu đơn hàng.
+                </div>
+
+              )}
 
             </div>
 
           </div>
 
         </div>
+
       )}
-
-    </div>
-  );
-}
-
-// =========================================================
-// EMPTY ORDERS
-// =========================================================
-
-function EmptyOrders() {
-  return (
-    <div className="bg-white border border-slate-200 rounded-2xl py-16 px-5 text-center">
-
-      <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-
-      <p className="font-bold text-slate-500">
-        Không có đơn hàng
-      </p>
-
-      <p className="text-sm text-slate-400 mt-1">
-        Chưa tìm thấy đơn hàng phù hợp
-      </p>
-
-    </div>
-  );
-}
-
-// =========================================================
-// INFO BOX
-// =========================================================
-
-function InfoBox({
-  icon,
-  label,
-  value
-}) {
-  return (
-    <div className="border border-slate-200 rounded-xl p-3">
-
-      <div className="flex items-center gap-2 text-slate-400 mb-1">
-
-        {icon}
-
-        <span className="text-xs font-bold">
-          {label}
-        </span>
-
-      </div>
-
-      <p className="text-sm font-semibold text-slate-800 break-words">
-        {value}
-      </p>
 
     </div>
   );
