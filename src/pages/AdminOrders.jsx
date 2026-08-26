@@ -59,7 +59,7 @@ export default function AdminOrders() {
       setOrders(res.data.orders || res.data.data || res.data || []);
     } catch (err) {
       console.error('Lỗi lấy danh sách đơn hàng:', err);
-    } fontally {
+    } finally {
       setLoading(false);
     }
   };
