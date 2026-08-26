@@ -9,7 +9,7 @@ import {
   X,
   Loader2,
   Trash2,
-  AlertCircle
+  UserCheck
 } from 'lucide-react';
 
 export default function AdminOrders() {
@@ -33,21 +33,25 @@ export default function AdminOrders() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [availableProducts, setAvailableProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(false);
 
-  // Form tạo đơn hàng mới
+  // Form tạo đơn hàng mới (Đã bỏ email)
   const [createForm, setCreateForm] = useState({
     customer_name: '',
-    customer_email: '',
     customer_phone: '',
     shipping_address: '',
     payment_method: 'COD',
     items: [] // { product_id, title, price, quantity }
   });
 
-  // State tạm để thêm sản phẩm vào đơn hàng mới
-  const [selectedProductId, setSelectedProductId] = useState('');
+  // State hỗ trợ tìm kiếm khách hàng bằng SĐT
+  const [phoneSearch, setPhoneSearch] = useState('');
+  const [showPhoneSuggestions, setShowPhoneSuggestions] = useState(false);
+
+  // State hỗ trợ tìm kiếm sản phẩm bằng Text
+  const [productSearch, setProductSearch] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [selectedQty, setSelectedQty] = useState(1);
+  const [showProductSuggestions, setShowProductSuggestions] = useState(false);
 
   // =========================================================
   // GỌI API FETCH DỮ LIỆU
@@ -66,13 +70,10 @@ export default function AdminOrders() {
 
   const fetchProductsForOrder = async () => {
     try {
-      setLoadingProducts(true);
       const res = await axios.get(`${API_URL}/products`);
       setAvailableProducts(res.data.products || res.data || []);
     } catch (err) {
       console.error('Lỗi lấy danh sách sản phẩm:', err);
-    } finally {
-      setLoadingProducts(false);
     }
   };
 
@@ -112,7 +113,7 @@ export default function AdminOrders() {
     }
   };
 
-  // Lọc danh sách đơn hàng
+  // Lọc danh sách đơn hàng cho bảng chính
   const filteredOrders = orders.filter((order) => {
     const keyword = search.trim().toLowerCase();
     const matchSearch =
@@ -126,6 +127,31 @@ export default function AdminOrders() {
 
     return matchSearch && matchStatus;
   });
+
+  // Trích xuất danh sách Khách hàng độc nhất từ danh sách đơn hàng cũ để gợi ý khi gõ SĐT
+  const uniqueCustomers = Array.from(
+    new Map(
+      orders
+        .filter((o) => o.customer_phone)
+        .map((o) => [
+          o.customer_phone,
+          {
+            phone: o.customer_phone,
+            name: o.customer_name || '',
+            address: o.shipping_address || ''
+          }
+        ])
+    ).values()
+  );
+
+  const filteredCustomerSuggestions = uniqueCustomers.filter((c) =>
+    c.phone.includes(phoneSearch.trim())
+  );
+
+  // Lọc gợi ý sản phẩm khi nhập Text tìm tên sản phẩm
+  const filteredProductSuggestions = availableProducts.filter((p) =>
+    p.title?.toLowerCase().includes(productSearch.trim().toLowerCase())
+  );
 
   // =========================================================
   // XỬ LÝ CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG
@@ -148,18 +174,19 @@ export default function AdminOrders() {
   };
 
   // =========================================================
-  // XỬ LÝ TẠO ĐƠN HÀNG MỚI (MODAL CREATE)
+  // XỬ LÝ MỞ MODAL & TẠO ĐƠN HÀNG
   // =========================================================
   const handleOpenCreateModal = async () => {
     setCreateForm({
       customer_name: '',
-      customer_email: '',
       customer_phone: '',
       shipping_address: '',
       payment_method: 'COD',
       items: []
     });
-    setSelectedProductId('');
+    setPhoneSearch('');
+    setProductSearch('');
+    setSelectedProduct(null);
     setSelectedQty(1);
     setShowCreateModal(true);
 
@@ -168,17 +195,27 @@ export default function AdminOrders() {
     }
   };
 
+  // Tự động điền Tên & Địa chỉ khi chọn gợi ý SĐT
+  const handleSelectCustomer = (customer) => {
+    setCreateForm({
+      ...createForm,
+      customer_phone: customer.phone,
+      customer_name: customer.name,
+      shipping_address: customer.address || createForm.shipping_address
+    });
+    setPhoneSearch(customer.phone);
+    setShowPhoneSuggestions(false);
+  };
+
+  // Thêm sản phẩm tìm được vào bảng tạm
   const handleAddItemToOrder = () => {
-    if (!selectedProductId) {
-      alert('Vui lòng chọn sản phẩm!');
+    if (!selectedProduct) {
+      alert('Vui lòng chọn sản phẩm từ danh sách gợi ý!');
       return;
     }
-    const product = availableProducts.find((p) => String(p.id) === String(selectedProductId));
-    if (!product) return;
 
-    // Kiểm tra xem sản phẩm đã có trong danh sách chọn chưa
     const existingIndex = createForm.items.findIndex(
-      (item) => String(item.product_id) === String(product.id)
+      (item) => String(item.product_id) === String(selectedProduct.id)
     );
 
     if (existingIndex > -1) {
@@ -191,17 +228,27 @@ export default function AdminOrders() {
         items: [
           ...createForm.items,
           {
-            product_id: product.id,
-            title: product.title,
-            price: product.price,
+            product_id: selectedProduct.id,
+            title: selectedProduct.title,
+            price: Number(selectedProduct.price || 0),
             quantity: Number(selectedQty)
           }
         ]
       });
     }
 
-    setSelectedProductId('');
+    // Reset ô nhập sản phẩm
+    setProductSearch('');
+    setSelectedProduct(null);
     setSelectedQty(1);
+  };
+
+  // Sửa trực tiếp số lượng hoặc giá tiền ngay trong danh sách
+  const handleItemChange = (index, field, value) => {
+    const updatedItems = [...createForm.items];
+    const numValue = Math.max(0, Number(value) || 0);
+    updatedItems[index][field] = numValue;
+    setCreateForm({ ...createForm, items: updatedItems });
   };
 
   const handleRemoveItemFromOrder = (index) => {
@@ -216,12 +263,12 @@ export default function AdminOrders() {
   const handleCreateOrderSubmit = async (e) => {
     e.preventDefault();
 
-    if (!createForm.customer_name.trim()) {
-      alert('Vui lòng nhập tên khách hàng!');
-      return;
-    }
     if (!createForm.customer_phone.trim()) {
       alert('Vui lòng nhập số điện thoại!');
+      return;
+    }
+    if (!createForm.customer_name.trim()) {
+      alert('Vui lòng nhập tên khách hàng!');
       return;
     }
     if (createForm.items.length === 0) {
@@ -355,7 +402,7 @@ export default function AdminOrders() {
                         </td>
                         <td className="px-6 py-4">
                           <p className="font-bold text-slate-900">{order.customer_name || 'Khách vãng lai'}</p>
-                          <p className="text-xs text-slate-400">{order.customer_phone || order.customer_email || '—'}</p>
+                          <p className="text-xs text-slate-400">{order.customer_phone || '—'}</p>
                         </td>
                         <td className="px-6 py-4 font-bold text-slate-900">
                           {formatMoney(order.total_amount)}
@@ -418,7 +465,6 @@ export default function AdminOrders() {
                   <p className="text-xs font-bold text-slate-400 uppercase">Khách hàng</p>
                   <p className="font-bold text-slate-900 mt-1">{selectedOrder.customer_name}</p>
                   <p className="text-slate-600">{selectedOrder.customer_phone}</p>
-                  <p className="text-slate-600">{selectedOrder.customer_email}</p>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-slate-400 uppercase">Địa chỉ giao hàng</p>
@@ -445,9 +491,6 @@ export default function AdminOrders() {
                       </p>
                     </div>
                   ))}
-                  {(selectedOrder.items || selectedOrder.OrderItems || []).length === 0 && (
-                    <p className="p-4 text-center text-xs text-slate-400">Không có dữ liệu chi tiết danh mục sản phẩm</p>
-                  )}
                 </div>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-200">
                   <span className="font-bold text-slate-900">Tổng cộng:</span>
@@ -492,7 +535,7 @@ export default function AdminOrders() {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL 2: TẠO ĐƠN HÀNG MỚI (MỚI THÊM) */}
+      {/* MODAL 2: TẠO ĐƠN HÀNG MỚI (ĐÃ CẬP NHẬT THEO YÊU CẦU) */}
       {/* ========================================================= */}
       {showCreateModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
@@ -500,7 +543,7 @@ export default function AdminOrders() {
             <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-sky-50">
               <div>
                 <h2 className="text-lg font-black text-slate-900">Tạo đơn hàng mới</h2>
-                <p className="text-xs text-slate-500">Tạo đơn thủ công cho khách hàng</p>
+                <p className="text-xs text-slate-500">Nhập SĐT để tự điền tên hoặc nhập mới thủ công</p>
               </div>
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -511,8 +554,49 @@ export default function AdminOrders() {
             </div>
 
             <form onSubmit={handleCreateOrderSubmit} className="p-6 overflow-y-auto space-y-5 flex-1">
-              {/* Thông tin khách */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* THÔNG TIN KHÁCH HÀNG */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 1. Nhập Số điện thoại (kèm gợi ý & tên) */}
+                <div className="relative">
+                  <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
+                    Số điện thoại *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={createForm.customer_phone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCreateForm({ ...createForm, customer_phone: val });
+                      setPhoneSearch(val);
+                      setShowPhoneSuggestions(true);
+                    }}
+                    onFocus={() => setShowPhoneSuggestions(true)}
+                    placeholder="Nhập số điện thoại..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
+                  />
+
+                  {/* Dropdown Gợi ý SĐT + Tên */}
+                  {showPhoneSuggestions && phoneSearch.trim() && filteredCustomerSuggestions.length > 0 && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                      {filteredCustomerSuggestions.map((c, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => handleSelectCustomer(c)}
+                          className="p-2.5 hover:bg-sky-50 cursor-pointer border-b border-slate-100 last:border-b-0 flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="font-bold text-sm text-slate-900">{c.phone}</p>
+                            <p className="text-xs text-slate-500">{c.name || 'Chưa tên'}</p>
+                          </div>
+                          <UserCheck className="w-4 h-4 text-sky-500" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Tên khách hàng (Tự điền khi chọn SĐT hoặc sửa tay) */}
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
                     Tên khách hàng *
@@ -522,37 +606,13 @@ export default function AdminOrders() {
                     required
                     value={createForm.customer_name}
                     onChange={(e) => setCreateForm({ ...createForm, customer_name: e.target.value })}
-                    placeholder="Nguyễn Văn A"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
-                    Số điện thoại *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={createForm.customer_phone}
-                    onChange={(e) => setCreateForm({ ...createForm, customer_phone: e.target.value })}
-                    placeholder="0901234567"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={createForm.customer_email}
-                    onChange={(e) => setCreateForm({ ...createForm, customer_email: e.target.value })}
-                    placeholder="email@example.com"
+                    placeholder="Tên khách hàng"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
                   />
                 </div>
               </div>
 
+              {/* Địa chỉ giao hàng */}
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
                   Địa chỉ giao hàng
@@ -566,24 +626,47 @@ export default function AdminOrders() {
                 />
               </div>
 
-              {/* Chọn sản phẩm */}
+              {/* CHỌN SẢN PHẨM BẰNG TEXT INPUT (KHÔNG DÙNG DROPDOWN) */}
               <div className="pt-3 border-t border-slate-100">
                 <label className="block text-xs font-bold uppercase text-slate-600 mb-2">
-                  Thêm sản phẩm vào đơn
+                  Thêm sản phẩm (Nhập tên để tìm kiếm)
                 </label>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <select
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
-                  >
-                    <option value="">-- Chọn sản phẩm --</option>
-                    {availableProducts.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.title} ({formatMoney(p.price)})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={productSearch}
+                      onChange={(e) => {
+                        setProductSearch(e.target.value);
+                        setSelectedProduct(null);
+                        setShowProductSuggestions(true);
+                      }}
+                      onFocus={() => setShowProductSuggestions(true)}
+                      placeholder="Gõ tên sản phẩm cần tìm..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
+                    />
+
+                    {/* Gợi ý danh sách sản phẩm khi gõ text */}
+                    {showProductSuggestions && productSearch.trim() && filteredProductSuggestions.length > 0 && (
+                      <div className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-52 overflow-y-auto">
+                        {filteredProductSuggestions.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setSelectedProduct(p);
+                              setProductSearch(p.title);
+                              setShowProductSuggestions(false);
+                            }}
+                            className="p-2.5 hover:bg-sky-50 cursor-pointer border-b border-slate-100 last:border-b-0 flex justify-between items-center text-sm"
+                          >
+                            <span className="font-medium text-slate-800">{p.title}</span>
+                            <span className="font-bold text-sky-600">{formatMoney(p.price)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex gap-2">
                     <input
                       type="number"
@@ -595,22 +678,22 @@ export default function AdminOrders() {
                     <button
                       type="button"
                       onClick={handleAddItemToOrder}
-                      className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-sm hover:bg-slate-800 transition"
+                      className="px-4 py-2 bg-slate-900 text-white font-bold rounded-xl text-sm hover:bg-slate-800 transition whitespace-nowrap"
                     >
-                      Thêm
+                      Thêm vào đơn
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Bảng sản phẩm chọn */}
+              {/* BẢNG DANH SÁCH SẢN PHẨM TRONG ĐƠN (CHO PHÉP SỬA GIÁ & SL TRỰC TIẾP) */}
               <div className="border border-slate-200 rounded-xl overflow-hidden">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
                     <tr>
                       <th className="p-3">Sản phẩm</th>
-                      <th className="p-3">Đơn giá</th>
-                      <th className="p-3 text-center">SL</th>
+                      <th className="p-3 w-32">Đơn giá (₫)</th>
+                      <th className="p-3 w-24 text-center">SL</th>
                       <th className="p-3">Thành tiền</th>
                       <th className="p-3 text-right">Xóa</th>
                     </tr>
@@ -619,8 +702,26 @@ export default function AdminOrders() {
                     {createForm.items.map((item, idx) => (
                       <tr key={idx}>
                         <td className="p-3 font-semibold text-slate-900">{item.title}</td>
-                        <td className="p-3">{formatMoney(item.price)}</td>
-                        <td className="p-3 text-center font-bold">{item.quantity}</td>
+                        {/* Ô chỉnh sửa giá trực tiếp */}
+                        <td className="p-3">
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.price}
+                            onChange={(e) => handleItemChange(idx, 'price', e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
+                          />
+                        </td>
+                        {/* Ô chỉnh sửa số lượng trực tiếp */}
+                        <td className="p-3 text-center">
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
+                            className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-sm text-center font-bold text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-sky-400"
+                          />
+                        </td>
                         <td className="p-3 font-bold text-sky-600">
                           {formatMoney(item.price * item.quantity)}
                         </td>
@@ -646,7 +747,7 @@ export default function AdminOrders() {
                 </table>
               </div>
 
-              {/* Tổng tiền */}
+              {/* TỔNG TIỀN ĐƠN HÀNG */}
               <div className="flex justify-between items-center bg-sky-50 p-4 rounded-xl">
                 <span className="font-bold text-slate-900">Tổng tiền đơn hàng:</span>
                 <span className="font-black text-xl text-sky-600">
