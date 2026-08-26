@@ -2,15 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import AdminSidebar from '../components/AdminSidebar';
 
-import {
-  Search,
-  Eye,
-  X,
-  Loader2,
-  Package,
-  User,
-  Phone,
-  MapPin,
+import { Search, Eye, X, Loader2, Package, User, Phone, MapPin,
   Mail,
   Calendar,
   Pencil,

@@ -10,6 +10,7 @@ import AdminCategories from './pages/AdminCategories';
 import AdminGroups from './pages/AdminGroups';
 import GroupDetail from './pages/GroupDetail';
 import AdminProducts from './pages/AdminProducts';
+import AdminOrders from './pages/AdminOrders'; 
 
 export default function App() {
   return (
@@ -42,6 +43,11 @@ export default function App() {
         <Route
           path="/admin/groups/:id"
           element={<GroupDetail />}
+        />
+
+        <Route
+          path="/admin/orders"
+          element={<AdminOrders />}
         />
 
         <Route
