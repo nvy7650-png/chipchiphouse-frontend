@@ -64,7 +64,7 @@ export default function AdminOrders() {
     } catch (err) {
       console.error('Lỗi khi tải chi tiết đơn hàng:', err);
       alert(err.response?.data?.message || 'Không thể tải chi tiết đơn hàng!');
-    } fontally {
+    } finally {
       setLoadingDetail(false);
     }
   };
