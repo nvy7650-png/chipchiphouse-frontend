@@ -77,9 +77,9 @@ export default function GroupDetail() {
       setLoading(true);
       setError('');
 
-      const res = await axios.get(
-        `${API_URL}/groups/${groupId}/products`
-      );
+     const res = await axios.get(
+  `${API_URL}/groups/${groupId}/albums`
+);
 
       console.log(
         'Group Detail:',
