@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
 import AdminSidebar from '../components/AdminSidebar';
-import {
-  FolderTree,
-  Plus,
-  Search,
-  Pencil,
-  Trash2,
-  X
-} from 'lucide-react';
+import { FolderTree, Plus, Search, Pencil, Trash2, X } from 'lucide-react';
 
 export default function AdminCategories() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -69,12 +62,9 @@ export default function AdminCategories() {
       id: formData.name
         .toLowerCase()
         .replace(/\s+/g, '-'),
-
       name: formData.name,
-
       description:
         formData.description || 'Chưa có mô tả',
-
       productCount: 0
     };
 
@@ -87,7 +77,6 @@ export default function AdminCategories() {
       name: '',
       description: ''
     });
-
     setShowModal(false);
   };
 
@@ -95,7 +84,6 @@ export default function AdminCategories() {
     const category = categories.find(
       item => item.id === id
     );
-
     if (!category) return;
 
     if (category.productCount > 0) {
